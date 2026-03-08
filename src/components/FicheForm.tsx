@@ -177,17 +177,53 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
             )}
           </div>
         ) : (
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="w-full flex flex-col items-center gap-2 py-8 text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <div className="w-full flex flex-col items-center gap-4 py-6">
             <div className="relative">
-              <Upload className="h-8 w-8" />
+              <Upload className="h-8 w-8 text-muted-foreground" />
               <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-2" />
             </div>
-            <span className="text-sm">Prenez une photo ou ajoutez une image</span>
             <span className="text-xs text-primary">L'IA extraira automatiquement les infos</span>
-          </button>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  if (isNativePlatform()) {
+                    const img = await pickImageFromGallery();
+                    if (img) {
+                      update("imageUrl", img);
+                      handleExtract(img);
+                    }
+                  } else {
+                    fileRef.current?.click();
+                  }
+                }}
+              >
+                <ImagePlus className="h-4 w-4" />
+                Galerie
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  if (isNativePlatform()) {
+                    const img = await takePhoto();
+                    if (img) {
+                      update("imageUrl", img);
+                      handleExtract(img);
+                    }
+                  } else {
+                    fileRef.current?.click();
+                  }
+                }}
+              >
+                <Camera className="h-4 w-4" />
+                Photo
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
