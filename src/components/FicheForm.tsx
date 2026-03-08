@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FicheConditionnement } from "@/types";
-import { ArrowLeft, Upload, X, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, X, Loader2, Sparkles, ImagePlus, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { isNativePlatform, pickImageFromGallery, takePhoto } from "@/lib/native-storage";
 
 const emptyFiche = (): FicheConditionnement => ({
   id: crypto.randomUUID(),
@@ -81,58 +82,50 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleExtract = async (base64: string) => {
+    setExtracting(true);
+    toast.info("Extraction des informations en cours...");
+    try {
+      const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
+        body: { imageBase64: base64 },
+      });
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+      const extractedFields: (keyof FicheConditionnement)[] = [
+        "codeProduit", "reference", "dateApplication", "designation",
+        "client", "marque", "gencod", "bouteille", "bouchon", "etiquette",
+        "colle", "dluo", "carton", "collerCarton", "etiquetteCarton",
+        "intercalaire", "typePalette", "palettisation", "uvcParCarton",
+        "cartonsParCouche", "couchesParPalette", "uvcParPalette",
+        "filmEtirable", "etiquettePalette",
+      ];
+      setData((prev) => {
+        const updated = { ...prev };
+        for (const key of extractedFields) {
+          if (result[key]) {
+            (updated as any)[key] = result[key];
+          }
+        }
+        if (result.autoTitle) updated.designation = result.autoTitle;
+        return updated;
+      });
+      toast.success("Informations extraites avec succès !");
+    } catch (err) {
+      console.error("Extraction error:", err);
+      toast.error("Erreur lors de l'extraction. Remplissez les champs manuellement.");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
       update("imageUrl", base64);
-      
-      // Auto-extract
-      setExtracting(true);
-      toast.info("Extraction des informations en cours...");
-      
-      try {
-        const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
-          body: { imageBase64: base64 },
-        });
-        
-        if (error) throw error;
-        if (result.error) throw new Error(result.error);
-        
-        // Fill in extracted data
-        const extractedFields: (keyof FicheConditionnement)[] = [
-          "codeProduit", "reference", "dateApplication", "designation",
-          "client", "marque", "gencod", "bouteille", "bouchon", "etiquette",
-          "colle", "dluo", "carton", "collerCarton", "etiquetteCarton",
-          "intercalaire", "typePalette", "palettisation", "uvcParCarton",
-          "cartonsParCouche", "couchesParPalette", "uvcParPalette",
-          "filmEtirable", "etiquettePalette",
-        ];
-        
-        setData((prev) => {
-          const updated = { ...prev };
-          for (const key of extractedFields) {
-            if (result[key]) {
-              (updated as any)[key] = result[key];
-            }
-          }
-          // Auto-title as designation
-          if (result.autoTitle) {
-            updated.designation = result.autoTitle;
-          }
-          return updated;
-        });
-        
-        toast.success("Informations extraites avec succès !");
-      } catch (err) {
-        console.error("Extraction error:", err);
-        toast.error("Erreur lors de l'extraction. Remplissez les champs manuellement.");
-      } finally {
-        setExtracting(false);
-      }
+      await handleExtract(base64);
     };
     reader.readAsDataURL(file);
   };
@@ -176,17 +169,53 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
             )}
           </div>
         ) : (
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="w-full flex flex-col items-center gap-2 py-8 text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <div className="w-full flex flex-col items-center gap-4 py-6">
             <div className="relative">
-              <Upload className="h-8 w-8" />
+              <Upload className="h-8 w-8 text-muted-foreground" />
               <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-2" />
             </div>
-            <span className="text-sm">Prenez une photo ou ajoutez une image</span>
             <span className="text-xs text-primary">L'IA extraira automatiquement les infos</span>
-          </button>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  if (isNativePlatform()) {
+                    const img = await pickImageFromGallery();
+                    if (img) {
+                      update("imageUrl", img);
+                      handleExtract(img);
+                    }
+                  } else {
+                    fileRef.current?.click();
+                  }
+                }}
+              >
+                <ImagePlus className="h-4 w-4" />
+                Galerie
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  if (isNativePlatform()) {
+                    const img = await takePhoto();
+                    if (img) {
+                      update("imageUrl", img);
+                      handleExtract(img);
+                    }
+                  } else {
+                    fileRef.current?.click();
+                  }
+                }}
+              >
+                <Camera className="h-4 w-4" />
+                Photo
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
