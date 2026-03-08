@@ -82,58 +82,50 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleExtract = async (base64: string) => {
+    setExtracting(true);
+    toast.info("Extraction des informations en cours...");
+    try {
+      const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
+        body: { imageBase64: base64 },
+      });
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+      const extractedFields: (keyof FicheConditionnement)[] = [
+        "codeProduit", "reference", "dateApplication", "designation",
+        "client", "marque", "gencod", "bouteille", "bouchon", "etiquette",
+        "colle", "dluo", "carton", "collerCarton", "etiquetteCarton",
+        "intercalaire", "typePalette", "palettisation", "uvcParCarton",
+        "cartonsParCouche", "couchesParPalette", "uvcParPalette",
+        "filmEtirable", "etiquettePalette",
+      ];
+      setData((prev) => {
+        const updated = { ...prev };
+        for (const key of extractedFields) {
+          if (result[key]) {
+            (updated as any)[key] = result[key];
+          }
+        }
+        if (result.autoTitle) updated.designation = result.autoTitle;
+        return updated;
+      });
+      toast.success("Informations extraites avec succès !");
+    } catch (err) {
+      console.error("Extraction error:", err);
+      toast.error("Erreur lors de l'extraction. Remplissez les champs manuellement.");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
       update("imageUrl", base64);
-      
-      // Auto-extract
-      setExtracting(true);
-      toast.info("Extraction des informations en cours...");
-      
-      try {
-        const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
-          body: { imageBase64: base64 },
-        });
-        
-        if (error) throw error;
-        if (result.error) throw new Error(result.error);
-        
-        // Fill in extracted data
-        const extractedFields: (keyof FicheConditionnement)[] = [
-          "codeProduit", "reference", "dateApplication", "designation",
-          "client", "marque", "gencod", "bouteille", "bouchon", "etiquette",
-          "colle", "dluo", "carton", "collerCarton", "etiquetteCarton",
-          "intercalaire", "typePalette", "palettisation", "uvcParCarton",
-          "cartonsParCouche", "couchesParPalette", "uvcParPalette",
-          "filmEtirable", "etiquettePalette",
-        ];
-        
-        setData((prev) => {
-          const updated = { ...prev };
-          for (const key of extractedFields) {
-            if (result[key]) {
-              (updated as any)[key] = result[key];
-            }
-          }
-          // Auto-title as designation
-          if (result.autoTitle) {
-            updated.designation = result.autoTitle;
-          }
-          return updated;
-        });
-        
-        toast.success("Informations extraites avec succès !");
-      } catch (err) {
-        console.error("Extraction error:", err);
-        toast.error("Erreur lors de l'extraction. Remplissez les champs manuellement.");
-      } finally {
-        setExtracting(false);
-      }
+      await handleExtract(base64);
     };
     reader.readAsDataURL(file);
   };
