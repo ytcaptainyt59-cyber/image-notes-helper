@@ -377,16 +377,27 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                   )}
                 </div>
                 {(() => {
-                  const title = (fiche.designation || "").toLowerCase();
-                  const extras = [
-                    fiche.codeProduit,
-                    ...(fiche.client && !title.includes(fiche.client.toLowerCase()) ? [fiche.client] : []),
-                    ...(fiche.marque && !title.includes(fiche.marque.toLowerCase()) ? [fiche.marque] : []),
-                    ...(fiche.etiquette && !title.includes(fiche.etiquette.toLowerCase()) ? [fiche.etiquette] : []),
-                  ].filter(Boolean);
-                  return extras.length > 0 ? (
+                  // Extraire le nom du produit depuis etiquette, sans marque, volume ni référence
+                  let produit = fiche.etiquette || "";
+                  if (produit) {
+                    // Retirer la marque si présente
+                    if (fiche.marque) {
+                      produit = produit.replace(new RegExp(fiche.marque.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+                    }
+                    if (fiche.client) {
+                      produit = produit.replace(new RegExp(fiche.client.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+                    }
+                    // Retirer les volumes (50cl, 1L, 75cl, etc.)
+                    produit = produit.replace(/\b\d+\s*(cl|ml|l|L)\b/gi, '').trim();
+                    // Retirer les références (Ref 440632, Réf. B1234, etc.)
+                    produit = produit.replace(/[-–]\s*[Rr][eéè]f\.?\s*\w+/g, '').trim();
+                    produit = produit.replace(/[Rr][eéè]f\.?\s*\w+/g, '').trim();
+                    // Nettoyer les tirets/espaces en trop
+                    produit = produit.replace(/^\s*[-–·]\s*/, '').replace(/\s*[-–·]\s*$/, '').replace(/\s{2,}/g, ' ').trim();
+                  }
+                  return produit ? (
                     <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
-                      {extras.join(" · ")}
+                      {produit}
                     </p>
                   ) : null;
                 })()}
