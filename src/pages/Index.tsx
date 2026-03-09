@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, LogOut, User, Activity } from "lucide-react";
+import { FileText, StickyNote, Sparkles, LogOut, User, Activity, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
+import UsersSection from "@/components/UsersSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
