@@ -67,3 +67,9 @@ INSERT INTO users (id, username, password_hash) VALUES (
   'admin',
   '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'
 );
+
+-- Table des paramètres (inscription à usage unique, etc.)
+CREATE TABLE IF NOT EXISTS app_settings (
+  keyname VARCHAR(100) NOT NULL PRIMARY KEY,
+  val VARCHAR(255) DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
