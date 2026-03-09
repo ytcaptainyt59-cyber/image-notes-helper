@@ -8,6 +8,7 @@ import { FormatNote, MachineNote, MACHINES, MachineName } from "@/types";
 import { getNotes, saveNote, deleteNote } from "@/lib/storage";
 import { getNotesRemote, saveNoteRemote, deleteNoteRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
+import { generateAndPrintNote } from "@/lib/print-note";
 
 // --- Note Detail View ---
 const NoteDetail = ({
