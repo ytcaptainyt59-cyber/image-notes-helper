@@ -29,10 +29,16 @@ const NoteDetail = ({
           </Button>
           <h2 className="font-display text-lg font-bold text-foreground">{note.title}</h2>
         </div>
-        <Button size="sm" variant="outline" className="gap-2" onClick={onEdit}>
-          <Edit className="h-4 w-4" />
-          Modifier
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => generateAndPrintNote(note)}>
+            <Printer className="h-4 w-4" />
+            Imprimer
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={onEdit}>
+            <Edit className="h-4 w-4" />
+            Modifier
+          </Button>
+        </div>
       </div>
 
       {note.content && (
