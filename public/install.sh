@@ -1,8 +1,9 @@
 #!/bin/bash
 # =============================================================
-#  COVINOR Régleur — Installation VPS Ubuntu 25
-#  Prérequis : Apache2 et MariaDB déjà installés
-#  Usage: chmod +x install.sh && sudo ./install.sh
+#  COVINOR Régleur — Installation complète depuis Git
+#  Clone le repo, build le frontend, installe tout
+#  Usage: curl -sL http://TON_DOMAINE/install.sh | sudo bash
+#    ou : chmod +x install.sh && sudo ./install.sh
 # =============================================================
 
 set -e
@@ -15,11 +16,12 @@ NC='\033[0m'
 echo -e "${BLUE}"
 echo "  ╔═══════════════════════════════════════╗"
 echo "  ║   COVINOR Régleur — Installation VPS  ║"
-echo "  ║   Apache2 + MariaDB + Node.js         ║"
+echo "  ║   Git + Build + Apache2 + MariaDB     ║"
 echo "  ╚═══════════════════════════════════════╝"
 echo -e "${NC}"
 
 # --- Variables ---
+read -p "🔗 URL du repo Git (HTTPS) : " GIT_URL
 read -p "🌐 Nom de domaine ou IP du VPS : " DOMAIN
 read -p "🗄️  Nom de la base MariaDB [covinor_regleur] : " DB_NAME
 DB_NAME=${DB_NAME:-covinor_regleur}
@@ -35,52 +37,64 @@ echo ""
 
 APP_DIR="/var/www/covinor"
 SERVER_DIR="/opt/covinor-server"
+BUILD_DIR="/tmp/covinor-build"
 
-# --- 1. Vérification prérequis ---
-echo -e "\n${GREEN}[1/6]${NC} Vérification des prérequis..."
+# --- 1. Prérequis ---
+echo -e "\n${GREEN}[1/8]${NC} Vérification des prérequis..."
 
 if ! command -v apache2 &> /dev/null; then
-  echo -e "${YELLOW}  ⚠ Apache2 non trouvé ! Installez-le : sudo apt install apache2${NC}"
-  exit 1
+  echo -e "${YELLOW}  ⚠ Apache2 non trouvé ! Installation...${NC}"
+  apt install -y -qq apache2
 fi
 
-if ! command -v mysql &> /dev/null && ! command -v mariadb &> /dev/null; then
-  echo -e "${YELLOW}  ⚠ MariaDB non trouvé ! Installez-le : sudo apt install mariadb-server${NC}"
-  exit 1
+MYSQL_CMD="mysql"
+if command -v mariadb &> /dev/null; then
+  MYSQL_CMD="mariadb"
+elif ! command -v mysql &> /dev/null; then
+  echo -e "${YELLOW}  ⚠ MariaDB non trouvé ! Installation...${NC}"
+  apt install -y -qq mariadb-server
+  MYSQL_CMD="mariadb"
 fi
 
-echo "  ✓ Apache2 et MariaDB détectés"
-
-# Node.js
-if ! command -v node &> /dev/null; then
-  echo "  → Installation de Node.js 20..."
-  apt update -qq
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt install -y -qq nodejs
+if ! command -v git &> /dev/null; then
+  apt install -y -qq git
 fi
 
-# Screen
 if ! command -v screen &> /dev/null; then
   apt install -y -qq screen
 fi
 
-echo "  ✓ Node $(node -v) | screen"
+echo "  ✓ Apache2 | MariaDB | Git | screen"
 
-# Modules Apache nécessaires
-echo "  → Activation des modules Apache..."
+# Node.js
+if ! command -v node &> /dev/null; then
+  echo "  → Installation de Node.js 20..."
+  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  apt install -y -qq nodejs
+fi
+echo "  ✓ Node $(node -v) | npm $(npm -v)"
+
+# Modules Apache
 a2enmod proxy proxy_http rewrite headers 2>/dev/null
 systemctl restart apache2
 
-# --- 2. MariaDB ---
-echo -e "${GREEN}[2/6]${NC} Configuration MariaDB..."
+# --- 2. Clone du repo ---
+echo -e "${GREEN}[2/8]${NC} Clonage du repo..."
+rm -rf ${BUILD_DIR}
+git clone ${GIT_URL} ${BUILD_DIR}
+echo "  ✓ Repo cloné dans ${BUILD_DIR}"
+
+# --- 3. Build du frontend ---
+echo -e "${GREEN}[3/8]${NC} Build du frontend (npm install + build)..."
+cd ${BUILD_DIR}
+npm install --legacy-peer-deps
+npm run build
+echo "  ✓ Frontend compilé"
+
+# --- 4. MariaDB ---
+echo -e "${GREEN}[4/8]${NC} Configuration MariaDB..."
 
 APP_PASS_HASH=$(echo -n "$APP_PASS" | sha256sum | awk '{print $1}')
-
-# Utiliser mariadb ou mysql selon ce qui est dispo
-MYSQL_CMD="mysql"
-if command -v mariadb &> /dev/null; then
-  MYSQL_CMD="mariadb"
-fi
 
 $MYSQL_CMD -u root <<EOF
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -122,17 +136,12 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT IGNORE INTO users (id, username, password_hash) VALUES (UUID(), '${APP_USER}', '${APP_PASS_HASH}');
 EOF
 
-echo "  ✓ Base '${DB_NAME}' prête, utilisateur app '${APP_USER}' créé"
+echo "  ✓ Base '${DB_NAME}' prête, utilisateur '${APP_USER}' créé"
 
-# --- 3. Backend Node.js ---
-echo -e "${GREEN}[3/6]${NC} Installation du backend Node.js..."
+# --- 5. Backend Node.js ---
+echo -e "${GREEN}[5/8]${NC} Installation du backend..."
 mkdir -p ${SERVER_DIR}
-
-if [ -d "./server" ]; then
-  cp -r ./server/* ${SERVER_DIR}/
-else
-  echo -e "${YELLOW}  ⚠ Dossier ./server introuvable — copiez-le manuellement dans ${SERVER_DIR}/${NC}"
-fi
+cp -r ${BUILD_DIR}/server/* ${SERVER_DIR}/
 
 cat > ${SERVER_DIR}/.env <<ENVFILE
 MYSQL_HOST=localhost
@@ -141,7 +150,7 @@ MYSQL_USER=${DB_USER}
 MYSQL_PASSWORD=${DB_PASS}
 MYSQL_DATABASE=${DB_NAME}
 PORT=3001
-# Optionnel — pour l'extraction IA des fiches
+# Optionnel — clé IA pour extraction automatique des fiches
 # LOVABLE_AI_KEY=
 ENVFILE
 
@@ -149,83 +158,66 @@ chmod +x ${SERVER_DIR}/start.sh ${SERVER_DIR}/stop.sh 2>/dev/null
 cd ${SERVER_DIR} && npm install --production
 echo "  ✓ Backend installé dans ${SERVER_DIR}"
 
-# --- 4. Frontend ---
-echo -e "${GREEN}[4/6]${NC} Déploiement du frontend..."
+# --- 6. Frontend ---
+echo -e "${GREEN}[6/8]${NC} Déploiement du frontend..."
 mkdir -p ${APP_DIR}
-
-if [ -d "./dist" ]; then
-  cp -r ./dist/* ${APP_DIR}/
-  echo "  ✓ Frontend déployé dans ${APP_DIR}"
-else
-  echo -e "${YELLOW}  ⚠ Dossier ./dist introuvable${NC}"
-  echo "    → Faites 'npm run build' sur votre PC puis copiez dist/* dans ${APP_DIR}/"
-fi
-
+cp -r ${BUILD_DIR}/dist/* ${APP_DIR}/
 chown -R www-data:www-data ${APP_DIR}
+echo "  ✓ Frontend déployé dans ${APP_DIR}"
 
-# --- 5. Apache2 VirtualHost ---
-echo -e "${GREEN}[5/6]${NC} Configuration Apache2..."
+# --- 7. Apache2 VirtualHost ---
+echo -e "${GREEN}[7/8]${NC} Configuration Apache2..."
 
-cat > /etc/apache2/sites-available/covinor.conf <<'APACHE_TEMPLATE'
+cat > /etc/apache2/sites-available/covinor.conf <<APACHE
 <VirtualHost *:80>
-    ServerName __DOMAIN__
-    DocumentRoot __APP_DIR__
+    ServerName ${DOMAIN}
+    DocumentRoot ${APP_DIR}
 
-    # Compression
     <IfModule mod_deflate.c>
         AddOutputFilterByType DEFLATE text/html text/css application/json application/javascript text/xml
     </IfModule>
 
-    # Cache fichiers statiques (30 jours)
-    <LocationMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2|woff)$">
+    <LocationMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2|woff)\$">
         Header set Cache-Control "public, max-age=2592000, immutable"
     </LocationMatch>
 
-    # Proxy API → Node.js backend sur port 3001
     ProxyPreserveHost On
     ProxyPass /api/ http://127.0.0.1:3001/api/
     ProxyPassReverse /api/ http://127.0.0.1:3001/api/
 
-    # Taille max upload (50 Mo pour images base64)
     LimitRequestBody 52428800
 
-    # SPA fallback — tout vers index.html
-    <Directory __APP_DIR__>
+    <Directory ${APP_DIR}>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
 
         RewriteEngine On
         RewriteBase /
-        RewriteRule ^index\.html$ - [L]
+        RewriteRule ^index\.html\$ - [L]
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule . /index.html [L]
     </Directory>
 
-    # Headers sécurité
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </VirtualHost>
-APACHE_TEMPLATE
-
-# Remplacer les placeholders
-sed -i "s|__DOMAIN__|${DOMAIN}|g" /etc/apache2/sites-available/covinor.conf
-sed -i "s|__APP_DIR__|${APP_DIR}|g" /etc/apache2/sites-available/covinor.conf
+APACHE
 
 a2ensite covinor.conf 2>/dev/null
 a2dissite 000-default.conf 2>/dev/null
 
 if apache2ctl configtest 2>&1 | grep -q "Syntax OK"; then
   systemctl reload apache2
-  echo "  ✓ Apache2 configuré (frontend + proxy API sur :3001)"
+  echo "  ✓ Apache2 configuré"
 else
-  echo -e "${YELLOW}  ⚠ Erreur de config Apache — vérifiez : apache2ctl configtest${NC}"
+  echo -e "${YELLOW}  ⚠ Erreur config Apache — vérifiez : apache2ctl configtest${NC}"
 fi
 
-# --- 6. Démarrer le backend ---
-echo -e "${GREEN}[6/6]${NC} Lancement du backend en screen..."
+# --- 8. Démarrer le backend ---
+echo -e "${GREEN}[8/8]${NC} Lancement du backend en screen..."
 screen -S covinor-api -X quit 2>/dev/null
 screen -dmS covinor-api bash -c "cd ${SERVER_DIR} && export \$(cat .env | xargs) && node server.js"
 sleep 1
@@ -233,18 +225,21 @@ sleep 1
 if screen -list | grep -q "covinor-api"; then
   echo "  ✓ Backend démarré en screen 'covinor-api'"
 else
-  echo -e "${YELLOW}  ⚠ Échec — lancez manuellement : cd ${SERVER_DIR} && ./start.sh${NC}"
+  echo -e "${YELLOW}  ⚠ Échec — lancez : cd ${SERVER_DIR} && ./start.sh${NC}"
 fi
 
-# --- SSL Let's Encrypt (si domaine, pas IP) ---
+# --- SSL ---
 if [[ ! "$DOMAIN" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo -e "\n${GREEN}[Bonus]${NC} SSL Let's Encrypt..."
   if ! command -v certbot &> /dev/null; then
     apt install -y -qq certbot python3-certbot-apache
   fi
   certbot --apache -d ${DOMAIN} --non-interactive --agree-tos --register-unsafely-without-email 2>/dev/null || \
-    echo -e "${YELLOW}  ⚠ SSL échoué — lancez manuellement : sudo certbot --apache -d ${DOMAIN}${NC}"
+    echo -e "${YELLOW}  ⚠ SSL échoué — lancez : sudo certbot --apache -d ${DOMAIN}${NC}"
 fi
+
+# --- Nettoyage ---
+rm -rf ${BUILD_DIR}
 
 # --- Résumé ---
 echo ""
@@ -254,20 +249,12 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 echo -e "  🌐 App :       ${GREEN}http://${DOMAIN}${NC}"
 echo -e "  📡 API :       ${GREEN}http://${DOMAIN}/api/health${NC}"
-echo -e "  👤 Login :     ${GREEN}${APP_USER}${NC} / votre mot de passe"
+echo -e "  👤 Login :     ${GREEN}${APP_USER}${NC}"
 echo -e "  🗄️  MariaDB :  ${GREEN}${DB_NAME}${NC}"
 echo ""
-echo -e "  ${BLUE}Commandes utiles :${NC}"
-echo "    screen -r covinor-api          → Voir les logs backend"
-echo "    Ctrl+A puis D                  → Détacher le screen"
-echo "    cd ${SERVER_DIR} && ./start.sh → Relancer le backend"
-echo "    cd ${SERVER_DIR} && ./stop.sh  → Arrêter le backend"
-echo ""
-echo -e "  ${BLUE}Mise à jour frontend :${NC}"
-echo "    npm run build"
-echo "    scp -r dist/* root@${DOMAIN}:${APP_DIR}/"
-echo ""
-echo -e "  ${BLUE}Mise à jour backend :${NC}"
-echo "    scp -r server/* root@${DOMAIN}:${SERVER_DIR}/"
-echo "    ssh root@${DOMAIN} 'cd ${SERVER_DIR} && ./stop.sh && ./start.sh'"
+echo -e "  ${BLUE}Commandes :${NC}"
+echo "    screen -r covinor-api          → Logs"
+echo "    Ctrl+A puis D                  → Détacher"
+echo "    cd ${SERVER_DIR} && ./start.sh → Relancer"
+echo "    cd ${SERVER_DIR} && ./stop.sh  → Arrêter"
 echo ""
