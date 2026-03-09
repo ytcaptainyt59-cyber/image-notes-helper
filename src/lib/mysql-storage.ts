@@ -15,6 +15,10 @@ async function callApi(endpoint: string, body: any) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  const contentType = resp.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Serveur API non disponible");
+  }
   const data = await resp.json();
   if (!resp.ok) throw new Error(data.error || "Erreur serveur");
   return data;
