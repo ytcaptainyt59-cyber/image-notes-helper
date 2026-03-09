@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FormatNote, MachineNote, MACHINES, MachineName } from "@/types";
 import { getNotes, saveNote, deleteNote } from "@/lib/storage";
+import { getNotesRemote, saveNoteRemote, deleteNoteRemote } from "@/lib/mysql-storage";
+import { toast } from "sonner";
 
 // --- Note Detail View ---
 const NoteDetail = ({
@@ -52,7 +54,6 @@ const NoteDetail = ({
         </div>
       )}
 
-      {/* Machine zones */}
       {(note.machines || []).length > 0 && (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground font-display uppercase tracking-wider">
@@ -101,8 +102,20 @@ const NotesSection = () => {
   const [editing, setEditing] = useState<FormatNote | null>(null);
   const [viewing, setViewing] = useState<FormatNote | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const refresh = () => setNotes(getNotes());
+  const loadNotes = useCallback(async () => {
+    try {
+      const remote = await getNotesRemote();
+      setNotes(remote);
+    } catch {
+      setNotes(getNotes());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadNotes(); }, [loadNotes]);
 
   const filtered = notes.filter((n) => {
     const q = search.toLowerCase();
@@ -119,16 +132,27 @@ const NotesSection = () => {
     );
   });
 
-  const handleSave = (note: FormatNote) => {
+  const handleSave = async (note: FormatNote) => {
     saveNote(note);
-    refresh();
     setShowForm(false);
     setEditing(null);
+    try {
+      await saveNoteRemote(note);
+      toast.success("Note sauvegardée en base de données");
+    } catch {
+      toast.error("Erreur MySQL — sauvegarde locale uniquement");
+    }
+    await loadNotes();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     deleteNote(id);
-    refresh();
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await deleteNoteRemote(id);
+    } catch {
+      toast.error("Erreur MySQL — suppression locale uniquement");
+    }
   };
 
   if (viewing) {
@@ -175,7 +199,11 @@ const NotesSection = () => {
         </Button>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <p className="text-sm">Chargement...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Tag className="h-12 w-12 mb-4 opacity-50" />
           <p className="text-lg font-display">Aucune note</p>
@@ -503,7 +531,7 @@ const MachineKeywordInput = ({
 }) => {
   const [input, setInput] = useState("");
   return (
-    <div>
+    <div className="space-y-1.5">
       <div className="flex gap-2">
         <Input
           value={input}
@@ -521,17 +549,17 @@ const MachineKeywordInput = ({
         <Button
           variant="outline"
           size="sm"
-          type="button"
           onClick={() => {
             onAdd(input);
             setInput("");
           }}
+          type="button"
         >
           <Plus className="h-3 w-3" />
         </Button>
       </div>
       {keywords.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2">
+        <div className="flex flex-wrap gap-1.5">
           {keywords.map((kw) => (
             <span
               key={kw}
