@@ -9,6 +9,7 @@ import { getNotes, saveNote, deleteNote } from "@/lib/storage";
 import { getNotesRemote, saveNoteRemote, deleteNoteRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
 import { generateAndPrintNote } from "@/lib/print-note";
+import { generateUUID } from "@/lib/uuid";
 
 // --- Note Detail View ---
 const NoteDetail = ({

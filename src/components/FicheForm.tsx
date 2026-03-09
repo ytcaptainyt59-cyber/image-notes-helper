@@ -8,9 +8,10 @@ import { ArrowLeft, Upload, X, Loader2, Sparkles, ImagePlus, Camera } from "luci
 import { extractFicheRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
 import { isNativePlatform, pickImageFromGallery, takePhoto } from "@/lib/native-storage";
+import { generateUUID } from "@/lib/uuid";
 
 const emptyFiche = (): FicheConditionnement => ({
-  id: crypto.randomUUID(),
+  id: generateUUID(),
   codeProduit: "",
   reference: "",
   dateApplication: "",
