@@ -134,6 +134,11 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO users (id, username, password_hash) VALUES (UUID(), '${APP_USER}', '${APP_PASS_HASH}');
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  keyname VARCHAR(100) NOT NULL PRIMARY KEY,
+  val VARCHAR(255) DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 EOF
 
 echo "  ✓ Base '${DB_NAME}' prête, utilisateur '${APP_USER}' créé"

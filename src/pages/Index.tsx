@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, LogOut, User, Activity } from "lucide-react";
+import { FileText, StickyNote, Sparkles, LogOut, User, Activity, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
+import UsersSection from "@/components/UsersSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
@@ -109,6 +110,17 @@ const Index = ({ user, onLogout }: IndexProps) => {
               <StickyNote className="h-4 w-4" />
               Formats
             </TabsTrigger>
+            <TabsTrigger
+              value="users"
+              className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
+                data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
+                data-[state=active]:text-primary-foreground data-[state=active]:glow-primary
+                data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                transition-all duration-200"
+            >
+              <Users className="h-4 w-4" />
+              Équipe
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="fiches" className="animate-fade-in">
@@ -117,6 +129,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
 
           <TabsContent value="notes" className="animate-fade-in">
             <NotesSection />
+          </TabsContent>
+
+          <TabsContent value="users" className="animate-fade-in">
+            <UsersSection />
           </TabsContent>
         </Tabs>
       </main>

@@ -58,6 +58,41 @@ export async function loginRemote(username: string, password: string) {
   return await callApi("/auth", { action: "login", username, password });
 }
 
+export async function registerRemote(username: string, password: string) {
+  return await callApi("/auth", { action: "register", username, password });
+}
+
+export async function getRegistrationStatus(): Promise<boolean> {
+  try {
+    const data = await callApi("/auth", { action: "registration_status" });
+    return data.available;
+  } catch {
+    return false;
+  }
+}
+
+export async function resetRegistration(): Promise<void> {
+  await callApi("/auth", { action: "reset_registration" });
+}
+
+// ---- Users ----
+
+export async function getUsersRemote(): Promise<{ id: string; username: string }[]> {
+  return (await callApi("/users", { action: "list" })) || [];
+}
+
+export async function createUserRemote(username: string, password: string) {
+  return await callApi("/users", { action: "create", username, password });
+}
+
+export async function deleteUserRemote(id: string): Promise<void> {
+  await callApi("/users", { action: "delete", id });
+}
+
+export async function changePasswordRemote(id: string, password: string): Promise<void> {
+  await callApi("/users", { action: "change_password", id, password });
+}
+
 // ---- AI Extract ----
 
 export async function extractFicheRemote(imageBase64: string) {

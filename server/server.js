@@ -51,19 +51,96 @@ app.post('/api/auth', async (req, res) => {
         'SELECT id, username FROM users WHERE username = ? AND password_hash = ?',
         [username, hashed]
       );
-
       if (rows.length === 0) {
         return res.status(401).json({ error: 'Identifiants incorrects' });
       }
-
       const user = rows[0];
       const token = crypto.randomUUID();
       res.json({ ok: true, user: { id: user.id, username: user.username }, token });
+
+    } else if (action === 'register') {
+      // Vérifier si l'inscription est encore possible (1 seule utilisation)
+      const [settings] = await pool.query("SELECT val FROM app_settings WHERE keyname = 'registration_used'");
+      if (settings.length > 0 && settings[0].val === '1') {
+        return res.status(403).json({ error: "L'inscription n'est plus disponible" });
+      }
+      if (!username || !password || password.length < 4) {
+        return res.status(400).json({ error: 'Identifiant et mot de passe (min 4 car.) requis' });
+      }
+      const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+      if (existing.length > 0) {
+        return res.status(409).json({ error: 'Cet identifiant existe déjà' });
+      }
+      const id = crypto.randomUUID();
+      const hashed = sha256(password);
+      await pool.query('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)', [id, username, hashed]);
+      // Marquer l'inscription comme utilisée
+      await pool.query("INSERT INTO app_settings (keyname, val) VALUES ('registration_used', '1') ON DUPLICATE KEY UPDATE val = '1'");
+      res.json({ ok: true, user: { id, username } });
+
+    } else if (action === 'registration_status') {
+      const [settings] = await pool.query("SELECT val FROM app_settings WHERE keyname = 'registration_used'");
+      const used = settings.length > 0 && settings[0].val === '1';
+      res.json({ available: !used });
+
+    } else if (action === 'reset_registration') {
+      await pool.query("INSERT INTO app_settings (keyname, val) VALUES ('registration_used', '0') ON DUPLICATE KEY UPDATE val = '0'");
+      res.json({ ok: true });
+
     } else {
       res.status(400).json({ error: 'Action inconnue' });
     }
   } catch (e) {
     console.error('Auth error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Users management ---
+app.post('/api/users', async (req, res) => {
+  try {
+    const { action, id, username, password } = req.body;
+
+    if (action === 'list') {
+      const [rows] = await pool.query('SELECT id, username FROM users ORDER BY username');
+      res.json(rows);
+
+    } else if (action === 'create') {
+      if (!username || !password || password.length < 4) {
+        return res.status(400).json({ error: 'Identifiant et mot de passe (min 4 car.) requis' });
+      }
+      const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+      if (existing.length > 0) {
+        return res.status(409).json({ error: 'Cet identifiant existe déjà' });
+      }
+      const newId = crypto.randomUUID();
+      const hashed = sha256(password);
+      await pool.query('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)', [newId, username, hashed]);
+      res.json({ ok: true, user: { id: newId, username } });
+
+    } else if (action === 'delete') {
+      if (!id) return res.status(400).json({ error: 'ID requis' });
+      // Empêcher de supprimer le dernier utilisateur
+      const [count] = await pool.query('SELECT COUNT(*) as cnt FROM users');
+      if (count[0].cnt <= 1) {
+        return res.status(400).json({ error: 'Impossible de supprimer le dernier utilisateur' });
+      }
+      await pool.query('DELETE FROM users WHERE id = ?', [id]);
+      res.json({ ok: true });
+
+    } else if (action === 'change_password') {
+      if (!id || !password || password.length < 4) {
+        return res.status(400).json({ error: 'ID et nouveau mot de passe (min 4 car.) requis' });
+      }
+      const hashed = sha256(password);
+      await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hashed, id]);
+      res.json({ ok: true });
+
+    } else {
+      res.status(400).json({ error: 'Action inconnue' });
+    }
+  } catch (e) {
+    console.error('Users error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
