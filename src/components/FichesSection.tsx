@@ -81,7 +81,11 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
       f.codeProduit.toLowerCase().includes(q) ||
       f.reference.toLowerCase().includes(q) ||
       f.client.toLowerCase().includes(q) ||
-      f.marque.toLowerCase().includes(q)
+      f.marque.toLowerCase().includes(q) ||
+      f.gencod.toLowerCase().includes(q) ||
+      f.etiquette.toLowerCase().includes(q) ||
+      f.bouteille.toLowerCase().includes(q) ||
+      f.bouchon.toLowerCase().includes(q)
     );
   });
 
