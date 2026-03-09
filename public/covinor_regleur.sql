@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS fiches (
   createdAt VARCHAR(30) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table des notes de format (avec zones machines)
+-- Table des notes de format (avec zones machines en JSON)
 CREATE TABLE IF NOT EXISTS format_notes (
   id VARCHAR(36) NOT NULL PRIMARY KEY,
   title VARCHAR(255) DEFAULT '',
@@ -51,3 +51,19 @@ CREATE TABLE IF NOT EXISTS format_notes (
   createdAt VARCHAR(30) DEFAULT '',
   updatedAt VARCHAR(30) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des utilisateurs (authentification)
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Utilisateur par défaut : admin / admin123
+-- ⚠️ CHANGEZ CE MOT DE PASSE !
+-- Pour générer un hash SHA-256 : echo -n "votreMotDePasse" | sha256sum
+INSERT INTO users (id, username, password_hash) VALUES (
+  UUID(),
+  'admin',
+  '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'
+);
