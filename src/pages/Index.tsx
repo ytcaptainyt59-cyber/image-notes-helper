@@ -43,10 +43,21 @@ const Index = ({ user, onLogout }: IndexProps) => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
-            <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
-            <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
-            <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
+              <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
+              <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
+              <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              onClick={onLogout}
+              title={`Déconnexion (${user.username})`}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
