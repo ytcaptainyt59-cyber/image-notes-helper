@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles } from "lucide-react";
+import { FileText, StickyNote, Sparkles, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
@@ -20,45 +20,56 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 py-4">
+      {/* Header */}
+      <header className="border-b border-border/50 px-4 py-4 glass-card">
         <div className="mx-auto max-w-5xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
-              <span className="font-display text-sm font-bold text-primary-foreground">C</span>
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
+              <span className="font-display text-base font-bold text-white">C</span>
             </div>
             <div>
               <h1 className="text-lg font-bold font-display tracking-tight text-foreground">
-                COVINOR Régleur
+                COVINOR <span className="gradient-text">Régleur</span>
               </h1>
-              <p className="text-xs text-muted-foreground">Assistant de conditionnement</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Zap className="h-3 w-3 text-accent" />
+                Gestion des formats & réglages
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Sparkles className={`h-4 w-4 ${aiEnabled ? "text-primary" : "text-muted-foreground"}`} />
+          <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
+            <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
             <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
             <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl p-4">
+      {/* Main Content */}
+      <main className="mx-auto max-w-5xl p-4 animate-fade-in">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-secondary mb-6">
-            <TabsTrigger value="fiches" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="w-full bg-secondary/50 mb-6 p-1 rounded-xl">
+            <TabsTrigger
+              value="fiches"
+              className="flex-1 gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary transition-all"
+            >
               <FileText className="h-4 w-4" />
-              Fiches Conditionnement
+              Fiches
             </TabsTrigger>
-            <TabsTrigger value="notes" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger
+              value="notes"
+              className="flex-1 gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary transition-all"
+            >
               <StickyNote className="h-4 w-4" />
-              Notes Format
+              Formats
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="fiches">
+          <TabsContent value="fiches" className="animate-fade-in">
             <FichesSection aiEnabled={aiEnabled} />
           </TabsContent>
 
-          <TabsContent value="notes">
+          <TabsContent value="notes" className="animate-fade-in">
             <NotesSection />
           </TabsContent>
         </Tabs>
