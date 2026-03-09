@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Plus, Search, Trash2, Edit, Tag, X } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FormatNote } from "@/types";
+import { FormatNote, MachineNote, MACHINES, MachineName } from "@/types";
 import { getNotes, saveNote, deleteNote } from "@/lib/storage";
 
 const NotesSection = () => {
@@ -20,7 +20,13 @@ const NotesSection = () => {
     return (
       n.title.toLowerCase().includes(q) ||
       n.content.toLowerCase().includes(q) ||
-      n.keywords.some((k) => k.toLowerCase().includes(q))
+      n.keywords.some((k) => k.toLowerCase().includes(q)) ||
+      (n.machines || []).some(
+        (m) =>
+          m.machine.toLowerCase().includes(q) ||
+          m.content.toLowerCase().includes(q) ||
+          m.keywords.some((k) => k.toLowerCase().includes(q))
+      )
     );
   });
 
@@ -55,7 +61,7 @@ const NotesSection = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par mot-clé, titre..."
+            placeholder="Rechercher par machine, mot-clé..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-card border-border"
@@ -85,9 +91,25 @@ const NotesSection = () => {
                   <h3 className="font-display text-sm font-semibold text-foreground">
                     {note.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {note.content}
-                  </p>
+                  {note.content && (
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {note.content}
+                    </p>
+                  )}
+                  {/* Machine badges */}
+                  {(note.machines || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {note.machines.map((m) => (
+                        <span
+                          key={m.machine}
+                          className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
+                        >
+                          <Wrench className="h-3 w-3" />
+                          {m.machine}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {note.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {note.keywords.map((kw) => (
@@ -102,11 +124,7 @@ const NotesSection = () => {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditing(note)}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(note)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
@@ -127,6 +145,8 @@ const NotesSection = () => {
   );
 };
 
+// --- Note Form with Machine Zones ---
+
 interface NoteFormProps {
   note: FormatNote | null;
   onSave: (note: FormatNote) => void;
@@ -138,13 +158,67 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
   const [content, setContent] = useState(note?.content || "");
   const [keywords, setKeywords] = useState<string[]>(note?.keywords || []);
   const [kwInput, setKwInput] = useState("");
+  const [machines, setMachines] = useState<MachineNote[]>(
+    note?.machines || []
+  );
+  const [expandedMachines, setExpandedMachines] = useState<Set<MachineName>>(
+    new Set(note?.machines?.map((m) => m.machine) || [])
+  );
 
   const addKeyword = () => {
     const kw = kwInput.trim();
-    if (kw && !keywords.includes(kw)) {
-      setKeywords([...keywords, kw]);
-    }
+    if (kw && !keywords.includes(kw)) setKeywords([...keywords, kw]);
     setKwInput("");
+  };
+
+  const toggleMachine = (machine: MachineName) => {
+    const exists = machines.find((m) => m.machine === machine);
+    if (exists) {
+      // Toggle expand
+      setExpandedMachines((prev) => {
+        const next = new Set(prev);
+        if (next.has(machine)) next.delete(machine);
+        else next.add(machine);
+        return next;
+      });
+    } else {
+      // Add machine
+      setMachines([...machines, { machine, content: "", keywords: [] }]);
+      setExpandedMachines((prev) => new Set(prev).add(machine));
+    }
+  };
+
+  const removeMachine = (machine: MachineName) => {
+    setMachines(machines.filter((m) => m.machine !== machine));
+    setExpandedMachines((prev) => {
+      const next = new Set(prev);
+      next.delete(machine);
+      return next;
+    });
+  };
+
+  const updateMachineContent = (machine: MachineName, content: string) => {
+    setMachines(machines.map((m) => (m.machine === machine ? { ...m, content } : m)));
+  };
+
+  const addMachineKeyword = (machine: MachineName, kw: string) => {
+    const trimmed = kw.trim();
+    if (!trimmed) return;
+    setMachines(
+      machines.map((m) =>
+        m.machine === machine && !m.keywords.includes(trimmed)
+          ? { ...m, keywords: [...m.keywords, trimmed] }
+          : m
+      )
+    );
+  };
+
+  const removeMachineKeyword = (machine: MachineName, kw: string) => {
+    setMachines(
+      machines.map((m) =>
+        m.machine === machine ? { ...m, keywords: m.keywords.filter((k) => k !== kw) } : m
+      )
+    );
   };
 
   const handleSubmit = () => {
@@ -154,16 +228,22 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
       title,
       content,
       keywords,
+      machines: machines.filter((m) => m.content.trim() || m.keywords.length > 0),
       createdAt: note?.createdAt || now,
       updatedAt: now,
     });
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-foreground">
-        {note ? "Modifier la note" : "Nouvelle note"}
-      </h2>
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="font-display text-lg font-bold text-foreground">
+          {note ? "Modifier la note" : "Nouvelle note"}
+        </h2>
+      </div>
 
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Titre</Label>
@@ -176,7 +256,17 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
       </div>
 
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Mots-clés</Label>
+        <Label className="text-xs text-muted-foreground">Notes générales</Label>
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="bg-secondary border-border min-h-[80px]"
+          placeholder="Notes générales sur le changement de format..."
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Mots-clés généraux</Label>
         <div className="flex gap-2">
           <Input
             value={kwInput}
@@ -206,14 +296,70 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
         )}
       </div>
 
-      <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Contenu</Label>
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="bg-secondary border-border min-h-[150px]"
-          placeholder="Décrivez les étapes, réglages, points d'attention..."
-        />
+      {/* Machine Zones */}
+      <div className="space-y-3">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+          Zones Machines
+        </Label>
+        <div className="grid gap-2">
+          {MACHINES.map((machine) => {
+            const machineNote = machines.find((m) => m.machine === machine);
+            const isExpanded = expandedMachines.has(machine);
+            const isActive = !!machineNote;
+
+            return (
+              <div
+                key={machine}
+                className={`rounded-lg border transition-colors ${
+                  isActive ? "border-primary/50 bg-primary/5" : "border-border bg-card"
+                }`}
+              >
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between p-3 text-left"
+                  onClick={() => toggleMachine(machine)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Wrench className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`font-display text-sm font-semibold ${isActive ? "text-primary" : "text-foreground"}`}>
+                      {machine}
+                    </span>
+                  </div>
+                  {isActive ? (
+                    isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {isActive && isExpanded && (
+                  <div className="px-3 pb-3 space-y-3">
+                    <Textarea
+                      value={machineNote!.content}
+                      onChange={(e) => updateMachineContent(machine, e.target.value)}
+                      className="bg-secondary border-border min-h-[60px] text-sm"
+                      placeholder={`Réglages, points d'attention pour ${machine}...`}
+                    />
+                    <MachineKeywordInput
+                      keywords={machineNote!.keywords}
+                      onAdd={(kw) => addMachineKeyword(machine, kw)}
+                      onRemove={(kw) => removeMachineKeyword(machine, kw)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive text-xs"
+                      onClick={() => removeMachine(machine)}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Retirer {machine}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex gap-3 justify-end">
@@ -224,6 +370,64 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
           Enregistrer
         </Button>
       </div>
+    </div>
+  );
+};
+
+// Small component for machine-specific keywords
+const MachineKeywordInput = ({
+  keywords,
+  onAdd,
+  onRemove,
+}: {
+  keywords: string[];
+  onAdd: (kw: string) => void;
+  onRemove: (kw: string) => void;
+}) => {
+  const [input, setInput] = useState("");
+  return (
+    <div>
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onAdd(input);
+              setInput("");
+            }
+          }}
+          className="bg-secondary border-border text-sm"
+          placeholder="Mot-clé machine + Entrée"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() => {
+            onAdd(input);
+            setInput("");
+          }}
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+      {keywords.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {keywords.map((kw) => (
+            <span
+              key={kw}
+              className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
+            >
+              {kw}
+              <button onClick={() => onRemove(kw)}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
