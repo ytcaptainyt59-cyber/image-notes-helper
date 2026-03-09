@@ -355,16 +355,20 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                 <h3 className="font-display text-xs sm:text-sm font-semibold text-foreground truncate">
                   {fiche.designation || "Sans désignation"}
                 </h3>
-                {fiche.etiquette && (
-                  <p className="text-[11px] sm:text-xs text-primary font-medium mt-0.5 truncate">
-                    {fiche.etiquette}
-                  </p>
-                )}
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
-                  {fiche.codeProduit && `${fiche.codeProduit}`}
-                  {fiche.client && ` · ${fiche.client}`}
-                  {fiche.marque && ` · ${fiche.marque}`}
-                </p>
+                {(() => {
+                  const title = (fiche.designation || "").toLowerCase();
+                  const extras = [
+                    fiche.codeProduit,
+                    ...(fiche.client && !title.includes(fiche.client.toLowerCase()) ? [fiche.client] : []),
+                    ...(fiche.marque && !title.includes(fiche.marque.toLowerCase()) ? [fiche.marque] : []),
+                    ...(fiche.etiquette && !title.includes(fiche.etiquette.toLowerCase()) ? [fiche.etiquette] : []),
+                  ].filter(Boolean);
+                  return extras.length > 0 ? (
+                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
+                      {extras.join(" · ")}
+                    </p>
+                  ) : null;
+                })()}
                 {fiche.gencod && (
                   <p className="text-[10px] sm:text-[11px] text-accent font-mono mt-0.5 truncate">
                     EAN: {fiche.gencod}
