@@ -110,34 +110,72 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
 
   // --- Bulk upload: 1 photo = 1 fiche automatique ---
   const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
+    // Convertir FileList en tableau pour un traitement fiable
+    const files = Array.from(fileList);
     const total = files.length;
     setBulkProgress({ current: 0, total });
     toast.info(`Import de ${total} photo${total > 1 ? "s" : ""} en cours...`);
+
+    // Reset input immédiatement pour permettre un nouveau sélection
+    if (bulkRef.current) bulkRef.current.value = "";
 
     const readFileAsBase64 = (file: File): Promise<string> =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error(`Impossible de lire ${file.name}`));
         reader.readAsDataURL(file);
       });
 
+    // Compresser l'image pour réduire la taille base64
+    const compressImage = (base64: string, maxWidth = 1600): Promise<string> =>
+      new Promise((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        };
+        img.onerror = () => resolve(base64); // fallback original
+        img.src = base64;
+      });
+
     let successCount = 0;
+    let errorCount = 0;
 
     for (let i = 0; i < total; i++) {
       setBulkProgress({ current: i + 1, total });
+
       try {
-        const base64 = await readFileAsBase64(files[i]);
+        // 1. Lire et compresser l'image
+        let base64: string;
+        try {
+          const raw = await readFileAsBase64(files[i]);
+          base64 = await compressImage(raw);
+        } catch (readErr: any) {
+          toast.error(`Photo ${i + 1}: impossible de lire le fichier`);
+          errorCount++;
+          continue;
+        }
+
         const fiche = emptyFiche(base64);
 
-        // AI extraction si activée
+        // 2. Extraction IA si activée
         if (aiEnabled) {
           try {
             const result = await extractFicheCloud(base64);
-            if (!result.error) {
+            if (result && !result.error) {
               for (const key of extractedFields) {
                 if (result[key]) {
                   (fiche as any)[key] = result[key];
@@ -146,42 +184,48 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
               if (result.autoTitle) fiche.designation = result.autoTitle;
             }
           } catch (err: any) {
-            console.error(`Extraction IA échouée pour photo ${i + 1}:`, err);
-            toast.error(`IA photo ${i + 1}: ${err?.message || "Erreur d'extraction"}`);
+            console.error(`IA photo ${i + 1}:`, err);
+            // Ne pas bloquer — la fiche sera créée sans extraction
           }
         }
 
-        // Sauvegarder en base distante d'abord
+        // 3. Sauvegarder en base distante
+        let savedRemote = false;
         try {
           await saveFicheRemote(fiche);
+          savedRemote = true;
         } catch (err) {
-          console.error(`Erreur MySQL photo ${i + 1}:`, err);
+          console.error(`MySQL photo ${i + 1}:`, err);
         }
 
-        // Sauvegarder en local (peut échouer si image trop grosse pour localStorage)
+        // 4. Sauvegarder en local (fallback)
         try {
           saveFiche(fiche);
-        } catch (err) {
-          console.warn("localStorage plein, sauvegarde distante uniquement");
+        } catch {
+          if (!savedRemote) {
+            toast.error(`Photo ${i + 1}: échec de sauvegarde`);
+            errorCount++;
+            continue;
+          }
         }
 
         successCount++;
-      } catch (err) {
-        console.error(`Erreur photo ${i + 1}:`, err);
-        toast.error(`Erreur sur la photo ${i + 1}`);
+      } catch (err: any) {
+        console.error(`Erreur inattendue photo ${i + 1}:`, err);
+        errorCount++;
       }
     }
 
     setBulkProgress(null);
-    // Reset input
-    if (bulkRef.current) bulkRef.current.value = "";
-
     await loadFiches();
 
     if (successCount > 0) {
       toast.success(
-        `${successCount} fiche${successCount > 1 ? "s" : ""} créée${successCount > 1 ? "s" : ""} avec succès${aiEnabled ? " (IA)" : ""}`
+        `${successCount}/${total} fiche${successCount > 1 ? "s" : ""} créée${successCount > 1 ? "s" : ""}${aiEnabled ? " avec IA" : ""}`
       );
+    }
+    if (errorCount > 0 && successCount === 0) {
+      toast.error("Aucune fiche n'a pu être créée. Vérifiez que votre serveur API est démarré.");
     }
   };
 
