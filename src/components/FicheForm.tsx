@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FicheConditionnement } from "@/types";
 import { ArrowLeft, Upload, X, Loader2, Sparkles, ImagePlus, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { extractFicheRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
 import { isNativePlatform, pickImageFromGallery, takePhoto } from "@/lib/native-storage";
 
