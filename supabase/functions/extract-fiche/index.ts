@@ -27,7 +27,16 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Tu es un expert en extraction de données de fiches de conditionnement industrielles (COVINOR). Analyse cette image et extrais TOUTES les informations visibles. Retourne les données structurées.`,
+                text: `Tu es un expert en extraction de données de fiches de conditionnement industrielles (COVINOR). 
+
+INSTRUCTIONS CRITIQUES :
+- Analyse cette image TRÈS ATTENTIVEMENT et extrais ABSOLUMENT TOUTES les informations visibles.
+- Ne laisse AUCUN champ vide si l'information est présente sur la fiche, même partiellement.
+- Lis chaque zone de la fiche : en-tête, tableau central, pied de page, encadrés latéraux.
+- Pour chaque champ, cherche les libellés suivants sur la fiche : "Code produit", "Réf.", "Date d'application", "Désignation", "Client", "Marque", "GENCOD", "EAN", "Bouteille", "Bouchon", "Étiquette", "Colle", "DLUO", "DLC", "Carton", "Colle carton", "Étiquette carton", "Intercalaire", "Palette", "Palettisation", "UVC/carton", "Cartons/couche", "Couches/palette", "UVC/palette", "Film étirable", "Étiquette palette", "Volume", "Contenance".
+- Si un champ a plusieurs valeurs (ex: référence + description), combine-les dans le même champ.
+- Inclus les codes références quand ils sont visibles (ex: "PET 50cl - Réf. B1234").
+- N'invente RIEN. Si une information n'est pas visible, laisse le champ vide.`,
               },
               {
                 type: "image_url",

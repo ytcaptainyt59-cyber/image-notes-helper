@@ -29,11 +29,29 @@ export interface FicheConditionnement {
   createdAt: string;
 }
 
+export const MACHINES = [
+  "POSIMAT",
+  "TIREUSE VINAIGRETTE",
+  "TIREUSE VINAIGRE",
+  "BOUCHONNEUSE",
+  "ÉTIQUETEUSE",
+  "PRASMATIC",
+] as const;
+
+export type MachineName = (typeof MACHINES)[number];
+
+export interface MachineNote {
+  machine: MachineName;
+  content: string;
+  keywords: string[];
+}
+
 export interface FormatNote {
   id: string;
   title: string;
   content: string;
   keywords: string[];
+  machines: MachineNote[];
   createdAt: string;
   updatedAt: string;
 }
