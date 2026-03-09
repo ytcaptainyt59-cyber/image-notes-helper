@@ -145,7 +145,7 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
 
       {/* Image upload */}
       <div className="rounded-lg border border-dashed border-border bg-card p-6">
-        <input type="file" ref={fileRef} accept="image/*" capture="environment" className="hidden" onChange={handleImage} />
+        <input type="file" ref={fileRef} accept="image/*" className="hidden" onChange={handleImage} />
         {data.imageUrl ? (
           <div className="relative">
             <img src={data.imageUrl} alt="Fiche" className="max-h-64 rounded-lg mx-auto" />
