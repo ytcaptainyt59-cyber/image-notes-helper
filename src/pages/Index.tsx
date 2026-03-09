@@ -8,7 +8,12 @@ import NotesSection from "@/components/NotesSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
-const Index = () => {
+interface IndexProps {
+  user: { id: string; username: string };
+  onLogout: () => void;
+}
+
+const Index = ({ user, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState("fiches");
   const [aiEnabled, setAiEnabled] = useState(() => {
     const stored = localStorage.getItem(AI_ENABLED_KEY);
