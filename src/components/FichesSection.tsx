@@ -89,6 +89,15 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
     );
   });
 
+  // Détection des doublons par gencod
+  const gencodCount = new Map<string, number>();
+  fiches.forEach((f) => {
+    if (f.gencod) {
+      gencodCount.set(f.gencod, (gencodCount.get(f.gencod) || 0) + 1);
+    }
+  });
+  const isDuplicate = (f: FicheConditionnement) => !!f.gencod && (gencodCount.get(f.gencod) || 0) > 1;
+
   const handleSave = async (fiche: FicheConditionnement) => {
     saveFiche(fiche);
     setShowForm(false);
