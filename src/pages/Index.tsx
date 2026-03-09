@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, Zap, LogOut } from "lucide-react";
+import { FileText, StickyNote, Sparkles, LogOut, User, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
@@ -25,57 +25,86 @@ const Index = ({ user, onLogout }: IndexProps) => {
   }, [aiEnabled]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background noise-bg">
       {/* Header */}
-      <header className="border-b border-border/50 px-4 py-4 glass-card">
-        <div className="mx-auto max-w-5xl flex items-center justify-between">
+      <header className="border-b border-border/30 px-4 py-0 glass-card-elevated sticky top-0 z-50">
+        <div className="mx-auto max-w-5xl flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
-              <span className="font-display text-base font-bold text-white">C</span>
+            <div className="relative">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
+                <span className="font-display text-sm font-bold text-white">C</span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 status-dot bg-success" />
             </div>
             <div>
-              <h1 className="text-lg font-bold font-display tracking-tight text-foreground">
+              <h1 className="text-base font-bold font-display tracking-tight text-foreground leading-tight">
                 COVINOR <span className="gradient-text">Régleur</span>
               </h1>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Zap className="h-3 w-3 text-accent" />
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-display flex items-center gap-1">
+                <Activity className="h-2.5 w-2.5 text-accent" />
                 Gestion des formats & réglages
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
-              <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
-              <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
-              <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+
+          <div className="flex items-center gap-2">
+            {/* AI Toggle */}
+            <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5 hover-lift cursor-default">
+              <Sparkles className={`h-3.5 w-3.5 transition-colors duration-300 ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`} />
+              <span className={`text-[10px] font-display uppercase tracking-wider hidden sm:inline transition-colors ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`}>
+                IA
+              </span>
+              <Switch
+                checked={aiEnabled}
+                onCheckedChange={setAiEnabled}
+                className="scale-90"
+              />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-              onClick={onLogout}
-              title={`Déconnexion (${user.username})`}
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+
+            {/* User chip */}
+            <div className="flex items-center gap-1.5 glass-card rounded-full pl-2 pr-1 py-1 hover-lift">
+              <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center">
+                <User className="h-3 w-3 text-muted-foreground" />
+              </div>
+              <span className="text-[10px] text-muted-foreground font-display hidden sm:inline">
+                {user.username}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-6 w-6 p-0 text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all"
+                onClick={onLogout}
+                title="Déconnexion"
+              >
+                <LogOut className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl p-4 animate-fade-in">
+      <main className="mx-auto max-w-5xl p-4 pt-6 animate-fade-in">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-secondary/50 mb-6 p-1 rounded-xl">
+          <TabsList className="w-full bg-card/50 mb-6 p-1.5 rounded-2xl border border-border/30 glass-card">
             <TabsTrigger
               value="fiches"
-              className="flex-1 gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary transition-all"
+              className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
+                data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
+                data-[state=active]:text-primary-foreground data-[state=active]:glow-primary
+                data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                transition-all duration-200"
             >
               <FileText className="h-4 w-4" />
               Fiches
             </TabsTrigger>
             <TabsTrigger
               value="notes"
-              className="flex-1 gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary transition-all"
+              className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
+                data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
+                data-[state=active]:text-primary-foreground data-[state=active]:glow-primary
+                data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                transition-all duration-200"
             >
               <StickyNote className="h-4 w-4" />
               Formats
@@ -91,6 +120,9 @@ const Index = ({ user, onLogout }: IndexProps) => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Bottom ambient glow */}
+      <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-primary/[0.03] to-transparent pointer-events-none" />
     </div>
   );
 };
