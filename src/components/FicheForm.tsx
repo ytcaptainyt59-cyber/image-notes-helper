@@ -87,10 +87,7 @@ const FicheForm = ({ fiche, onSave, onCancel, aiEnabled = false }: Props) => {
     setExtracting(true);
     toast.info("Extraction des informations en cours...");
     try {
-      const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
-        body: { imageBase64: base64 },
-      });
-      if (error) throw error;
+      const result = await extractFicheRemote(base64);
       if (result.error) throw new Error(result.error);
       const extractedFields: (keyof FicheConditionnement)[] = [
         "codeProduit", "reference", "dateApplication", "designation",
