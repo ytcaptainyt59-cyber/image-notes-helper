@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FicheConditionnement } from "@/types";
 import { ArrowLeft, Upload, X, Loader2, Sparkles, ImagePlus, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { extractFicheRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
 import { isNativePlatform, pickImageFromGallery, takePhoto } from "@/lib/native-storage";
 
@@ -87,10 +87,7 @@ const FicheForm = ({ fiche, onSave, onCancel, aiEnabled = false }: Props) => {
     setExtracting(true);
     toast.info("Extraction des informations en cours...");
     try {
-      const { data: result, error } = await supabase.functions.invoke("extract-fiche", {
-        body: { imageBase64: base64 },
-      });
-      if (error) throw error;
+      const result = await extractFicheRemote(base64);
       if (result.error) throw new Error(result.error);
       const extractedFields: (keyof FicheConditionnement)[] = [
         "codeProduit", "reference", "dateApplication", "designation",
