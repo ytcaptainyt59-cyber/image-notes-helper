@@ -376,6 +376,7 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                     </span>
                   )}
                 </div>
+                {(() => {
                   const title = (fiche.designation || "").toLowerCase();
                   const extras = [
                     fiche.codeProduit,
