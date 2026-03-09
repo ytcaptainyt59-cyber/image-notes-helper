@@ -352,10 +352,16 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                 <h3 className="font-display text-sm font-semibold text-foreground truncate">
                   {fiche.designation || "Sans désignation"}
                 </h3>
+                {fiche.etiquette && (
+                  <p className="text-xs text-primary font-medium mt-0.5 truncate">
+                    {fiche.etiquette}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
                   {fiche.codeProduit && `Code: ${fiche.codeProduit}`}
                   {fiche.client && ` · ${fiche.client}`}
                   {fiche.marque && ` · ${fiche.marque}`}
+                  {fiche.gencod && ` · EAN: ${fiche.gencod}`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}
