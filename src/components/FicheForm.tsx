@@ -88,7 +88,7 @@ const FicheForm = ({ fiche, onSave, onCancel, aiEnabled = false }: Props) => {
     setExtracting(true);
     toast.info("Extraction des informations en cours...");
     try {
-      const result = await extractFicheRemote(base64);
+      const result = await extractFicheCloud(base64);
       if (result.error) throw new Error(result.error);
       const extractedFields: (keyof FicheConditionnement)[] = [
         "codeProduit", "reference", "dateApplication", "designation",

@@ -136,7 +136,7 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         // AI extraction si activée
         if (aiEnabled) {
           try {
-            const result = await extractFicheRemote(base64);
+            const result = await extractFicheCloud(base64);
             if (!result.error) {
               for (const key of extractedFields) {
                 if (result[key]) {
