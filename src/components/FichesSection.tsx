@@ -365,10 +365,17 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h3 className="font-display text-xs sm:text-sm font-semibold text-foreground truncate">
-                  {fiche.designation || "Sans désignation"}
-                </h3>
-                {(() => {
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-xs sm:text-sm font-semibold text-foreground truncate">
+                    {fiche.designation || "Sans désignation"}
+                  </h3>
+                  {isDuplicate(fiche) && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 text-orange-400 px-2 py-0.5 text-[10px] font-semibold flex-shrink-0">
+                      <Copy className="h-3 w-3" />
+                      Doublon
+                    </span>
+                  )}
+                </div>
                   const title = (fiche.designation || "").toLowerCase();
                   const extras = [
                     fiche.codeProduit,
