@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { FormatNote, MachineNote, MACHINES, MachineName } from "@/types";
 import { getNotes, saveNote, deleteNote } from "@/lib/storage";
 import { getNotesRemote, saveNoteRemote, deleteNoteRemote } from "@/lib/mysql-storage";
 import { toast } from "sonner";
+import { generateAndPrintNote } from "@/lib/print-note";
 
 // --- Note Detail View ---
 const NoteDetail = ({
@@ -28,10 +29,16 @@ const NoteDetail = ({
           </Button>
           <h2 className="font-display text-lg font-bold text-foreground">{note.title}</h2>
         </div>
-        <Button size="sm" variant="outline" className="gap-2" onClick={onEdit}>
-          <Edit className="h-4 w-4" />
-          Modifier
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => generateAndPrintNote(note)}>
+            <Printer className="h-4 w-4" />
+            Imprimer
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={onEdit}>
+            <Edit className="h-4 w-4" />
+            Modifier
+          </Button>
+        </div>
       </div>
 
       {note.content && (
