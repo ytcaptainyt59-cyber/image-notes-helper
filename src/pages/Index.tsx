@@ -85,9 +85,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl p-4 pt-6 animate-fade-in">
+      <main className="mx-auto max-w-5xl px-3 sm:p-4 pt-4 sm:pt-6 pb-24 sm:pb-6 animate-fade-in">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-card/50 mb-6 p-1.5 rounded-2xl border border-border/30 glass-card">
+          {/* Desktop tabs */}
+          <TabsList className="hidden sm:flex w-full bg-card/50 mb-6 p-1.5 rounded-2xl border border-border/30 glass-card">
             <TabsTrigger
               value="fiches"
               className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
@@ -122,6 +123,33 @@ const Index = ({ user, onLogout }: IndexProps) => {
               Équipe
             </TabsTrigger>
           </TabsList>
+
+          {/* Mobile bottom nav */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 glass-card-elevated border-t border-border/30 px-2 pb-[env(safe-area-inset-bottom)]">
+            <div className="flex justify-around py-1.5">
+              {[
+                { value: "fiches", icon: FileText, label: "Fiches" },
+                { value: "notes", icon: StickyNote, label: "Formats" },
+                { value: "users", icon: Users, label: "Équipe" },
+              ].map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all duration-200
+                    ${activeTab === value
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                    }`}
+                >
+                  <Icon className={`h-5 w-5 ${activeTab === value ? "drop-shadow-[0_0_6px_hsl(28,95%,52%)]" : ""}`} />
+                  <span className="text-[10px] font-display font-medium uppercase tracking-wider">{label}</span>
+                  {activeTab === value && (
+                    <div className="h-0.5 w-6 rounded-full bg-primary mt-0.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <TabsContent value="fiches" className="animate-fade-in">
             <FichesSection aiEnabled={aiEnabled} />
