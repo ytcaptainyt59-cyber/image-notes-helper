@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Trash2, Eye, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FicheConditionnement } from "@/types";
 import { getFiches, saveFiche, deleteFiche } from "@/lib/storage";
+import { getFichesRemote, saveFicheRemote, deleteFicheRemote } from "@/lib/mysql-storage";
 import FicheForm from "./FicheForm";
 import FicheDetail from "./FicheDetail";
+import { toast } from "sonner";
 
 const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   const [fiches, setFiches] = useState<FicheConditionnement[]>(getFiches());
@@ -13,8 +15,21 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingFiche, setEditingFiche] = useState<FicheConditionnement | null>(null);
   const [viewingFiche, setViewingFiche] = useState<FicheConditionnement | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const refresh = () => setFiches(getFiches());
+  const loadFiches = useCallback(async () => {
+    try {
+      const remote = await getFichesRemote();
+      setFiches(remote);
+    } catch {
+      // Fallback to localStorage
+      setFiches(getFiches());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadFiches(); }, [loadFiches]);
 
   const filtered = fiches.filter((f) => {
     const q = search.toLowerCase();
@@ -27,16 +42,28 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
     );
   });
 
-  const handleSave = (fiche: FicheConditionnement) => {
+  const handleSave = async (fiche: FicheConditionnement) => {
+    // Save locally first
     saveFiche(fiche);
-    refresh();
     setShowForm(false);
     setEditingFiche(null);
+    try {
+      await saveFicheRemote(fiche);
+      toast.success("Fiche sauvegardée en base de données");
+    } catch {
+      toast.error("Erreur MySQL — sauvegarde locale uniquement");
+    }
+    await loadFiches();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     deleteFiche(id);
-    refresh();
+    setFiches((prev) => prev.filter((f) => f.id !== id));
+    try {
+      await deleteFicheRemote(id);
+    } catch {
+      toast.error("Erreur MySQL — suppression locale uniquement");
+    }
   };
 
   if (viewingFiche) {
@@ -85,7 +112,11 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         </Button>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <p className="text-sm">Chargement...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Image className="h-12 w-12 mb-4 opacity-50" />
           <p className="text-lg font-display">Aucune fiche</p>
