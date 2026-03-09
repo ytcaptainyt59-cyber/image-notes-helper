@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FicheConditionnement } from "@/types";
 import { getFiches, saveFiche, deleteFiche } from "@/lib/storage";
-import { getFichesRemote, saveFicheRemote, deleteFicheRemote, extractFicheRemote } from "@/lib/mysql-storage";
+import { getFichesRemote, saveFicheRemote, deleteFicheRemote } from "@/lib/mysql-storage";
+import { extractFicheCloud } from "@/lib/cloud-extract";
 import { generateUUID } from "@/lib/uuid";
 import FicheForm from "./FicheForm";
 import FicheDetail from "./FicheDetail";
@@ -135,7 +136,7 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         // AI extraction si activée
         if (aiEnabled) {
           try {
-            const result = await extractFicheRemote(base64);
+            const result = await extractFicheCloud(base64);
             if (!result.error) {
               for (const key of extractedFields) {
                 if (result[key]) {
