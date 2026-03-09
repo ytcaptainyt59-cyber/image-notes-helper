@@ -1,13 +1,54 @@
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Trash2, Eye, Image } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Plus, Search, Trash2, Eye, Image, Images, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FicheConditionnement } from "@/types";
 import { getFiches, saveFiche, deleteFiche } from "@/lib/storage";
-import { getFichesRemote, saveFicheRemote, deleteFicheRemote } from "@/lib/mysql-storage";
+import { getFichesRemote, saveFicheRemote, deleteFicheRemote, extractFicheRemote } from "@/lib/mysql-storage";
+import { generateUUID } from "@/lib/uuid";
 import FicheForm from "./FicheForm";
 import FicheDetail from "./FicheDetail";
 import { toast } from "sonner";
+
+const emptyFiche = (imageUrl: string): FicheConditionnement => ({
+  id: generateUUID(),
+  codeProduit: "",
+  reference: "",
+  dateApplication: "",
+  designation: "",
+  client: "",
+  marque: "",
+  gencod: "",
+  bouteille: "",
+  bouchon: "",
+  etiquette: "",
+  colle: "",
+  dluo: "",
+  carton: "",
+  collerCarton: "",
+  etiquetteCarton: "",
+  intercalaire: "",
+  typePalette: "",
+  palettisation: "",
+  uvcParCarton: "",
+  cartonsParCouche: "",
+  couchesParPalette: "",
+  uvcParPalette: "",
+  filmEtirable: "",
+  etiquettePalette: "",
+  imageUrl,
+  notes: "",
+  createdAt: new Date().toISOString(),
+});
+
+const extractedFields: (keyof FicheConditionnement)[] = [
+  "codeProduit", "reference", "dateApplication", "designation",
+  "client", "marque", "gencod", "bouteille", "bouchon", "etiquette",
+  "colle", "dluo", "carton", "collerCarton", "etiquetteCarton",
+  "intercalaire", "typePalette", "palettisation", "uvcParCarton",
+  "cartonsParCouche", "couchesParPalette", "uvcParPalette",
+  "filmEtirable", "etiquettePalette",
+];
 
 const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   const [fiches, setFiches] = useState<FicheConditionnement[]>(getFiches());
@@ -16,13 +57,14 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   const [editingFiche, setEditingFiche] = useState<FicheConditionnement | null>(null);
   const [viewingFiche, setViewingFiche] = useState<FicheConditionnement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const bulkRef = useRef<HTMLInputElement>(null);
 
   const loadFiches = useCallback(async () => {
     try {
       const remote = await getFichesRemote();
       setFiches(remote);
     } catch {
-      // Fallback to localStorage
       setFiches(getFiches());
     } finally {
       setLoading(false);
@@ -43,7 +85,6 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   });
 
   const handleSave = async (fiche: FicheConditionnement) => {
-    // Save locally first
     saveFiche(fiche);
     setShowForm(false);
     setEditingFiche(null);
@@ -63,6 +104,75 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
       await deleteFicheRemote(id);
     } catch {
       toast.error("Erreur MySQL — suppression locale uniquement");
+    }
+  };
+
+  // --- Bulk upload: 1 photo = 1 fiche automatique ---
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const total = files.length;
+    setBulkProgress({ current: 0, total });
+    toast.info(`Import de ${total} photo${total > 1 ? "s" : ""} en cours...`);
+
+    const readFileAsBase64 = (file: File): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    let successCount = 0;
+
+    for (let i = 0; i < total; i++) {
+      setBulkProgress({ current: i + 1, total });
+      try {
+        const base64 = await readFileAsBase64(files[i]);
+        const fiche = emptyFiche(base64);
+
+        // AI extraction si activée
+        if (aiEnabled) {
+          try {
+            const result = await extractFicheRemote(base64);
+            if (!result.error) {
+              for (const key of extractedFields) {
+                if (result[key]) {
+                  (fiche as any)[key] = result[key];
+                }
+              }
+              if (result.autoTitle) fiche.designation = result.autoTitle;
+            }
+          } catch (err) {
+            console.error(`Extraction IA échouée pour photo ${i + 1}:`, err);
+          }
+        }
+
+        // Sauvegarder
+        saveFiche(fiche);
+        try {
+          await saveFicheRemote(fiche);
+        } catch {
+          // Sauvegarde locale uniquement
+        }
+        successCount++;
+      } catch (err) {
+        console.error(`Erreur photo ${i + 1}:`, err);
+        toast.error(`Erreur sur la photo ${i + 1}`);
+      }
+    }
+
+    setBulkProgress(null);
+    // Reset input
+    if (bulkRef.current) bulkRef.current.value = "";
+
+    await loadFiches();
+
+    if (successCount > 0) {
+      toast.success(
+        `${successCount} fiche${successCount > 1 ? "s" : ""} créée${successCount > 1 ? "s" : ""} avec succès${aiEnabled ? " (IA)" : ""}`
+      );
     }
   };
 
@@ -96,8 +206,34 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-3">
-        <div className="relative flex-1">
+      {/* Barre de progression import en lot */}
+      {bulkProgress && (
+        <div className="rounded-lg border border-primary/50 bg-primary/5 p-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div className="flex-1">
+              <p className="font-display text-sm font-semibold text-foreground">
+                Import en cours… {bulkProgress.current}/{bulkProgress.total}
+              </p>
+              {aiEnabled && (
+                <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
+                  <Sparkles className="h-3 w-3" />
+                  Extraction IA automatique
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Rechercher par produit, code, client..."
@@ -106,7 +242,25 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
             className="pl-10 bg-card border-border"
           />
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
+        <input
+          type="file"
+          ref={bulkRef}
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleBulkUpload}
+        />
+        <Button
+          variant="outline"
+          onClick={() => bulkRef.current?.click()}
+          className="gap-2"
+          disabled={!!bulkProgress}
+        >
+          <Images className="h-4 w-4" />
+          Import photos
+          {aiEnabled && <Sparkles className="h-3 w-3 text-primary" />}
+        </Button>
+        <Button onClick={() => setShowForm(true)} className="gap-2" disabled={!!bulkProgress}>
           <Plus className="h-4 w-4" />
           Nouvelle fiche
         </Button>
