@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, Zap } from "lucide-react";
+import { FileText, StickyNote, Sparkles, Zap, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
-const Index = () => {
+interface IndexProps {
+  user: { id: string; username: string };
+  onLogout: () => void;
+}
+
+const Index = ({ user, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState("fiches");
   const [aiEnabled, setAiEnabled] = useState(() => {
     const stored = localStorage.getItem(AI_ENABLED_KEY);
@@ -37,10 +43,21 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
-            <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
-            <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
-            <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5">
+              <Sparkles className={`h-3.5 w-3.5 transition-colors ${aiEnabled ? "text-accent" : "text-muted-foreground"}`} />
+              <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
+              <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              onClick={onLogout}
+              title={`Déconnexion (${user.username})`}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
