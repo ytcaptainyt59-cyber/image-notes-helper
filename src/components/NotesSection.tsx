@@ -378,7 +378,7 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
   const handleSubmit = () => {
     const now = new Date().toISOString();
     onSave({
-      id: note?.id || crypto.randomUUID(),
+      id: note?.id || generateUUID(),
       title,
       content,
       keywords,
