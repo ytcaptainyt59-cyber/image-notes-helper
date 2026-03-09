@@ -81,7 +81,11 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
       f.codeProduit.toLowerCase().includes(q) ||
       f.reference.toLowerCase().includes(q) ||
       f.client.toLowerCase().includes(q) ||
-      f.marque.toLowerCase().includes(q)
+      f.marque.toLowerCase().includes(q) ||
+      f.gencod.toLowerCase().includes(q) ||
+      f.etiquette.toLowerCase().includes(q) ||
+      f.bouteille.toLowerCase().includes(q) ||
+      f.bouchon.toLowerCase().includes(q)
     );
   });
 
@@ -289,7 +293,7 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher..."
+            placeholder="Rechercher par nom, gencod, marque, produit..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-card border-border text-sm"
