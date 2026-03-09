@@ -44,6 +44,7 @@ interface Props {
   fiche: FicheConditionnement | null;
   onSave: (fiche: FicheConditionnement) => void;
   onCancel: () => void;
+  aiEnabled?: boolean;
 }
 
 const fields: { key: keyof FicheConditionnement; label: string; section: string }[] = [
@@ -73,7 +74,7 @@ const fields: { key: keyof FicheConditionnement; label: string; section: string 
   { key: "etiquettePalette", label: "Étiquette palette", section: "Palettisation" },
 ];
 
-const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
+const FicheForm = ({ fiche, onSave, onCancel, aiEnabled = false }: Props) => {
   const [data, setData] = useState<FicheConditionnement>(fiche || emptyFiche());
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -125,9 +126,19 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
     reader.onload = async () => {
       const base64 = reader.result as string;
       update("imageUrl", base64);
-      await handleExtract(base64);
+      if (aiEnabled) {
+        await handleExtract(base64);
+      }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleNativeImage = async (img: string | null) => {
+    if (!img) return;
+    update("imageUrl", img);
+    if (aiEnabled) {
+      await handleExtract(img);
+    }
   };
 
   const sections = [...new Set(fields.map((f) => f.section))];
@@ -172,9 +183,13 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
           <div className="w-full flex flex-col items-center gap-4 py-6">
             <div className="relative">
               <Upload className="h-8 w-8 text-muted-foreground" />
-              <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-2" />
+              {aiEnabled && <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-2" />}
             </div>
-            <span className="text-xs text-primary">L'IA extraira automatiquement les infos</span>
+            {aiEnabled ? (
+              <span className="text-xs text-primary">L'IA extraira automatiquement les infos</span>
+            ) : (
+              <span className="text-xs text-muted-foreground">IA désactivée — remplissage manuel</span>
+            )}
             <div className="flex gap-3 flex-wrap justify-center">
               <Button
                 variant="outline"
@@ -182,11 +197,7 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
                 className="gap-2"
                 onClick={async () => {
                   if (isNativePlatform()) {
-                    const img = await pickImageFromGallery();
-                    if (img) {
-                      update("imageUrl", img);
-                      handleExtract(img);
-                    }
+                    await handleNativeImage(await pickImageFromGallery());
                   } else {
                     fileRef.current?.click();
                   }
@@ -201,11 +212,7 @@ const FicheForm = ({ fiche, onSave, onCancel }: Props) => {
                 className="gap-2"
                 onClick={async () => {
                   if (isNativePlatform()) {
-                    const img = await takePhoto();
-                    if (img) {
-                      update("imageUrl", img);
-                      handleExtract(img);
-                    }
+                    await handleNativeImage(await takePhoto());
                   } else {
                     fileRef.current?.click();
                   }

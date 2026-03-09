@@ -7,7 +7,7 @@ import { getFiches, saveFiche, deleteFiche } from "@/lib/storage";
 import FicheForm from "./FicheForm";
 import FicheDetail from "./FicheDetail";
 
-const FichesSection = () => {
+const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
   const [fiches, setFiches] = useState<FicheConditionnement[]>(getFiches());
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -62,6 +62,7 @@ const FichesSection = () => {
           setShowForm(false);
           setEditingFiche(null);
         }}
+        aiEnabled={aiEnabled}
       />
     );
   }

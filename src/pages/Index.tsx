@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote } from "lucide-react";
+import { FileText, StickyNote, Sparkles } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
 
+const AI_ENABLED_KEY = "covinor_ai_enabled";
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState("fiches");
+  const [aiEnabled, setAiEnabled] = useState(() => {
+    const stored = localStorage.getItem(AI_ENABLED_KEY);
+    return stored === null ? false : stored === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(AI_ENABLED_KEY, String(aiEnabled));
+  }, [aiEnabled]);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border px-4 py-4">
         <div className="mx-auto max-w-5xl flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -23,10 +33,14 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Assistant de conditionnement</p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className={`h-4 w-4 ${aiEnabled ? "text-primary" : "text-muted-foreground"}`} />
+            <span className="text-xs text-muted-foreground hidden sm:inline">IA</span>
+            <Switch checked={aiEnabled} onCheckedChange={setAiEnabled} />
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="mx-auto max-w-5xl p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-secondary mb-6">
@@ -41,7 +55,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="fiches">
-            <FichesSection />
+            <FichesSection aiEnabled={aiEnabled} />
           </TabsContent>
 
           <TabsContent value="notes">
