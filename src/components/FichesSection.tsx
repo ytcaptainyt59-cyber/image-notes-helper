@@ -145,18 +145,26 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
               }
               if (result.autoTitle) fiche.designation = result.autoTitle;
             }
-          } catch (err) {
+          } catch (err: any) {
             console.error(`Extraction IA échouée pour photo ${i + 1}:`, err);
+            toast.error(`IA photo ${i + 1}: ${err?.message || "Erreur d'extraction"}`);
           }
         }
 
-        // Sauvegarder
-        saveFiche(fiche);
+        // Sauvegarder en base distante d'abord
         try {
           await saveFicheRemote(fiche);
-        } catch {
-          // Sauvegarde locale uniquement
+        } catch (err) {
+          console.error(`Erreur MySQL photo ${i + 1}:`, err);
         }
+
+        // Sauvegarder en local (peut échouer si image trop grosse pour localStorage)
+        try {
+          saveFiche(fiche);
+        } catch (err) {
+          console.warn("localStorage plein, sauvegarde distante uniquement");
+        }
+
         successCount++;
       } catch (err) {
         console.error(`Erreur photo ${i + 1}:`, err);
