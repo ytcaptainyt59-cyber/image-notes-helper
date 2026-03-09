@@ -285,14 +285,14 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         </div>
       )}
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex gap-2 sm:gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par produit, code, client..."
+            placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card border-border"
+            className="pl-10 bg-card border-border text-sm"
           />
         </div>
         <input
@@ -305,17 +305,20 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         />
         <Button
           variant="outline"
+          size="sm"
           onClick={() => bulkRef.current?.click()}
-          className="gap-2"
+          className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm"
           disabled={!!bulkProgress}
         >
           <Images className="h-4 w-4" />
-          Import photos
+          <span className="hidden sm:inline">Import photos</span>
+          <span className="sm:hidden">Photos</span>
           {aiEnabled && <Sparkles className="h-3 w-3 text-primary" />}
         </Button>
-        <Button onClick={() => setShowForm(true)} className="gap-2" disabled={!!bulkProgress}>
+        <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm" disabled={!!bulkProgress}>
           <Plus className="h-4 w-4" />
-          Nouvelle fiche
+          <span className="hidden sm:inline">Nouvelle fiche</span>
+          <span className="sm:hidden">Nouveau</span>
         </Button>
       </div>
 
@@ -330,47 +333,49 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
           <p className="text-sm">Ajoutez votre première fiche de conditionnement</p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2 sm:gap-3">
           {filtered.map((fiche) => (
             <div
               key={fiche.id}
-              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 hover:border-primary/50 transition-colors cursor-pointer"
+              className="flex items-center gap-3 sm:gap-4 rounded-xl border border-border bg-card p-3 sm:p-4 hover:border-primary/50 active:bg-card/80 transition-colors cursor-pointer"
               onClick={() => setViewingFiche(fiche)}
             >
               {fiche.imageUrl ? (
                 <img
                   src={fiche.imageUrl}
                   alt="Fiche"
-                  className="h-16 w-16 rounded object-cover border border-border"
+                  className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg object-cover border border-border flex-shrink-0"
                 />
               ) : (
-                <div className="h-16 w-16 rounded bg-secondary flex items-center justify-center">
-                  <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                  <FileIcon className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h3 className="font-display text-sm font-semibold text-foreground truncate">
+                <h3 className="font-display text-xs sm:text-sm font-semibold text-foreground truncate">
                   {fiche.designation || "Sans désignation"}
                 </h3>
                 {fiche.etiquette && (
-                  <p className="text-xs text-primary font-medium mt-0.5 truncate">
+                  <p className="text-[11px] sm:text-xs text-primary font-medium mt-0.5 truncate">
                     {fiche.etiquette}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {fiche.codeProduit && `Code: ${fiche.codeProduit}`}
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+                  {fiche.codeProduit && `${fiche.codeProduit}`}
                   {fiche.client && ` · ${fiche.client}`}
                   {fiche.marque && ` · ${fiche.marque}`}
-                  {fiche.gencod && ` · EAN: ${fiche.gencod}`}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}
-                </p>
+                {fiche.gencod && (
+                  <p className="text-[10px] sm:text-[11px] text-accent font-mono mt-0.5 truncate">
+                    EAN: {fiche.gencod}
+                  </p>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 flex-shrink-0">
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="h-8 w-8 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     setViewingFiche(fiche);
@@ -381,7 +386,7 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-destructive hover:text-destructive"
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(fiche.id);

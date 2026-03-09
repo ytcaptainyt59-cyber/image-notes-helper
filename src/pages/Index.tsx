@@ -28,46 +28,46 @@ const Index = ({ user, onLogout }: IndexProps) => {
   return (
     <div className="min-h-screen bg-background noise-bg">
       {/* Header */}
-      <header className="border-b border-border/30 px-4 py-0 glass-card-elevated sticky top-0 z-50">
-        <div className="mx-auto max-w-5xl flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-border/30 px-3 sm:px-4 py-0 glass-card-elevated sticky top-0 z-50">
+        <div className="mx-auto max-w-5xl flex items-center justify-between h-14 sm:h-16">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
-                <span className="font-display text-sm font-bold text-white">C</span>
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
+                <span className="font-display text-xs sm:text-sm font-bold text-white">C</span>
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 status-dot bg-success" />
             </div>
             <div>
-              <h1 className="text-base font-bold font-display tracking-tight text-foreground leading-tight">
+              <h1 className="text-sm sm:text-base font-bold font-display tracking-tight text-foreground leading-tight">
                 COVINOR <span className="gradient-text">Régleur</span>
               </h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-display flex items-center gap-1">
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-[0.12em] sm:tracking-[0.15em] font-display flex items-center gap-1 hidden sm:flex">
                 <Activity className="h-2.5 w-2.5 text-accent" />
                 Gestion des formats & réglages
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* AI Toggle */}
-            <div className="flex items-center gap-2 glass-card rounded-full px-3 py-1.5 hover-lift cursor-default">
-              <Sparkles className={`h-3.5 w-3.5 transition-colors duration-300 ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`} />
-              <span className={`text-[10px] font-display uppercase tracking-wider hidden sm:inline transition-colors ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`}>
+            <div className="flex items-center gap-1.5 sm:gap-2 glass-card rounded-full px-2 sm:px-3 py-1 sm:py-1.5 hover-lift cursor-default">
+              <Sparkles className={`h-3 sm:h-3.5 w-3 sm:w-3.5 transition-colors duration-300 ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`} />
+              <span className={`text-[9px] sm:text-[10px] font-display uppercase tracking-wider hidden sm:inline transition-colors ${aiEnabled ? "text-primary" : "text-muted-foreground/50"}`}>
                 IA
               </span>
               <Switch
                 checked={aiEnabled}
                 onCheckedChange={setAiEnabled}
-                className="scale-90"
+                className="scale-75 sm:scale-90"
               />
             </div>
 
             {/* User chip */}
-            <div className="flex items-center gap-1.5 glass-card rounded-full pl-2 pr-1 py-1 hover-lift">
+            <div className="flex items-center gap-1 sm:gap-1.5 glass-card rounded-full pl-1.5 sm:pl-2 pr-1 py-1 hover-lift">
               <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center">
                 <User className="h-3 w-3 text-muted-foreground" />
               </div>
-              <span className="text-[10px] text-muted-foreground font-display hidden sm:inline">
+              <span className="text-[10px] text-muted-foreground font-display hidden sm:inline max-w-[80px] truncate">
                 {user.username}
               </span>
               <Button
@@ -85,9 +85,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl p-4 pt-6 animate-fade-in">
+      <main className="mx-auto max-w-5xl px-3 sm:p-4 pt-4 sm:pt-6 pb-24 sm:pb-6 animate-fade-in">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-card/50 mb-6 p-1.5 rounded-2xl border border-border/30 glass-card">
+          {/* Desktop tabs */}
+          <TabsList className="hidden sm:flex w-full bg-card/50 mb-6 p-1.5 rounded-2xl border border-border/30 glass-card">
             <TabsTrigger
               value="fiches"
               className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
@@ -122,6 +123,33 @@ const Index = ({ user, onLogout }: IndexProps) => {
               Équipe
             </TabsTrigger>
           </TabsList>
+
+          {/* Mobile bottom nav */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 glass-card-elevated border-t border-border/30 px-2 pb-[env(safe-area-inset-bottom)]">
+            <div className="flex justify-around py-1.5">
+              {[
+                { value: "fiches", icon: FileText, label: "Fiches" },
+                { value: "notes", icon: StickyNote, label: "Formats" },
+                { value: "users", icon: Users, label: "Équipe" },
+              ].map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all duration-200
+                    ${activeTab === value
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                    }`}
+                >
+                  <Icon className={`h-5 w-5 ${activeTab === value ? "drop-shadow-[0_0_6px_hsl(28,95%,52%)]" : ""}`} />
+                  <span className="text-[10px] font-display font-medium uppercase tracking-wider">{label}</span>
+                  {activeTab === value && (
+                    <div className="h-0.5 w-6 rounded-full bg-primary mt-0.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <TabsContent value="fiches" className="animate-fade-in">
             <FichesSection aiEnabled={aiEnabled} />
