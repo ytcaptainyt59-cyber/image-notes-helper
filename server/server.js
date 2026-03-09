@@ -157,8 +157,101 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
+// --- AI Extract (optionnel — nécessite LOVABLE_AI_KEY dans .env) ---
+app.post('/api/extract', async (req, res) => {
+  try {
+    const aiKey = process.env.LOVABLE_AI_KEY;
+    if (!aiKey) {
+      return res.status(400).json({ error: "IA non configurée. Ajoutez LOVABLE_AI_KEY dans le .env du serveur." });
+    }
+
+    const { imageBase64 } = req.body;
+    if (!imageBase64) return res.status(400).json({ error: "Image manquante" });
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${aiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Tu es un expert en extraction de données de fiches de conditionnement industrielles (COVINOR). 
+Analyse cette image TRÈS ATTENTIVEMENT et extrais ABSOLUMENT TOUTES les informations visibles.
+Ne laisse AUCUN champ vide si l'information est présente. N'invente RIEN.
+Cherche les libellés : "Code produit", "Réf.", "Date d'application", "Désignation", "Client", "Marque", "GENCOD", "EAN", "Bouteille", "Bouchon", "Étiquette", "Colle", "DLUO", "DLC", "Carton", "Colle carton", "Étiquette carton", "Intercalaire", "Palette", "Palettisation", "UVC/carton", "Cartons/couche", "Couches/palette", "UVC/palette", "Film étirable", "Étiquette palette", "Volume".`,
+              },
+              {
+                type: "image_url",
+                image_url: { url: imageBase64 },
+              },
+            ],
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_fiche",
+              description: "Extraire les informations d'une fiche de conditionnement",
+              parameters: {
+                type: "object",
+                properties: {
+                  codeProduit: { type: "string" }, reference: { type: "string" },
+                  dateApplication: { type: "string" }, designation: { type: "string" },
+                  client: { type: "string" }, marque: { type: "string" },
+                  gencod: { type: "string" }, bouteille: { type: "string" },
+                  bouchon: { type: "string" }, etiquette: { type: "string" },
+                  colle: { type: "string" }, dluo: { type: "string" },
+                  carton: { type: "string" }, collerCarton: { type: "string" },
+                  etiquetteCarton: { type: "string" }, intercalaire: { type: "string" },
+                  typePalette: { type: "string" }, palettisation: { type: "string" },
+                  uvcParCarton: { type: "string" }, cartonsParCouche: { type: "string" },
+                  couchesParPalette: { type: "string" }, uvcParPalette: { type: "string" },
+                  filmEtirable: { type: "string" }, etiquettePalette: { type: "string" },
+                  volume: { type: "string" },
+                },
+                required: ["designation"],
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "extract_fiche" } },
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) return res.status(429).json({ error: "Trop de requêtes IA, réessayez." });
+      if (response.status === 402) return res.status(402).json({ error: "Crédits IA épuisés." });
+      const t = await response.text();
+      console.error("AI error:", response.status, t);
+      throw new Error("Erreur AI gateway");
+    }
+
+    const data = await response.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error("Pas de résultat d'extraction");
+
+    const extracted = JSON.parse(toolCall.function.arguments);
+    const parts = [extracted.marque, extracted.client, extracted.volume].filter(Boolean);
+    const autoTitle = parts.length > 0 ? parts.join(" - ") : extracted.designation || "Fiche";
+
+    res.json({ ...extracted, autoTitle });
+  } catch (e) {
+    console.error('Extract error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // --- Start ---
 app.listen(PORT, () => {
   console.log(`\n  🚀 COVINOR Backend démarré sur le port ${PORT}`);
-  console.log(`  📡 API : http://localhost:${PORT}/api/health\n`);
+  console.log(`  📡 API : http://localhost:${PORT}/api/health`);
+  console.log(`  🤖 IA  : ${process.env.LOVABLE_AI_KEY ? 'activée' : 'désactivée (ajoutez LOVABLE_AI_KEY dans .env)'}\n`);
 });
