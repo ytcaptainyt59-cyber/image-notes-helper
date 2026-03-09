@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, Zap } from "lucide-react";
+import { FileText, StickyNote, Sparkles, Zap, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
