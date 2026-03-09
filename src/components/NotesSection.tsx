@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
