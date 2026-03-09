@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Search, Trash2, Eye, Image, Images, Loader2, Sparkles } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Image, Images, Loader2, Sparkles, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FicheConditionnement } from "@/types";
