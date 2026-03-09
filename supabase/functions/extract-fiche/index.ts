@@ -112,9 +112,8 @@ INSTRUCTIONS CRITIQUES :
 
     const extracted = JSON.parse(toolCall.function.arguments);
 
-    // Build auto-title: marque + client + volume
-    const parts = [extracted.marque, extracted.client, extracted.volume].filter(Boolean);
-    const autoTitle = parts.length > 0 ? parts.join(" - ") : extracted.designation || "Fiche";
+    // Use the actual designation extracted from the fiche, don't build a synthetic title
+    const autoTitle = extracted.designation || "";
 
     return new Response(JSON.stringify({ ...extracted, autoTitle }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
