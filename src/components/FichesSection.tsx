@@ -285,14 +285,14 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         </div>
       )}
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex gap-2 sm:gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par produit, code, client..."
+            placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card border-border"
+            className="pl-10 bg-card border-border text-sm"
           />
         </div>
         <input
@@ -305,17 +305,20 @@ const FichesSection = ({ aiEnabled }: { aiEnabled: boolean }) => {
         />
         <Button
           variant="outline"
+          size="sm"
           onClick={() => bulkRef.current?.click()}
-          className="gap-2"
+          className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm"
           disabled={!!bulkProgress}
         >
           <Images className="h-4 w-4" />
-          Import photos
+          <span className="hidden sm:inline">Import photos</span>
+          <span className="sm:hidden">Photos</span>
           {aiEnabled && <Sparkles className="h-3 w-3 text-primary" />}
         </Button>
-        <Button onClick={() => setShowForm(true)} className="gap-2" disabled={!!bulkProgress}>
+        <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm" disabled={!!bulkProgress}>
           <Plus className="h-4 w-4" />
-          Nouvelle fiche
+          <span className="hidden sm:inline">Nouvelle fiche</span>
+          <span className="sm:hidden">Nouveau</span>
         </Button>
       </div>
 
