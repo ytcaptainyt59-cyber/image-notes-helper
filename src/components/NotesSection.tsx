@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Tag, X, ArrowLeft, ChevronDown, ChevronRight, Wrench, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,10 +7,99 @@ import { Label } from "@/components/ui/label";
 import { FormatNote, MachineNote, MACHINES, MachineName } from "@/types";
 import { getNotes, saveNote, deleteNote } from "@/lib/storage";
 
+// --- Note Detail View ---
+const NoteDetail = ({
+  note,
+  onBack,
+  onEdit,
+}: {
+  note: FormatNote;
+  onBack: () => void;
+  onEdit: () => void;
+}) => {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="font-display text-lg font-bold text-foreground">{note.title}</h2>
+        </div>
+        <Button size="sm" variant="outline" className="gap-2" onClick={onEdit}>
+          <Edit className="h-4 w-4" />
+          Modifier
+        </Button>
+      </div>
+
+      {note.content && (
+        <div className="rounded-lg bg-card border border-border p-4">
+          <p className="text-xs text-muted-foreground font-display uppercase mb-2">Notes générales</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
+        </div>
+      )}
+
+      {note.keywords.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {note.keywords.map((kw) => (
+            <span
+              key={kw}
+              className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary"
+            >
+              {kw}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Machine zones */}
+      {(note.machines || []).length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground font-display uppercase tracking-wider">
+            Zones Machines
+          </p>
+          {note.machines.map((m) => (
+            <div
+              key={m.machine}
+              className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2"
+            >
+              <div className="flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-primary" />
+                <span className="font-display text-sm font-bold text-primary">{m.machine}</span>
+              </div>
+              {m.content && (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{m.content}</p>
+              )}
+              {m.keywords.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {m.keywords.map((kw) => (
+                    <span
+                      key={kw}
+                      className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
+                    >
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground text-right">
+        Mis à jour : {new Date(note.updatedAt).toLocaleDateString("fr-FR")}
+      </p>
+    </div>
+  );
+};
+
+// --- Main Section ---
 const NotesSection = () => {
   const [notes, setNotes] = useState<FormatNote[]>(getNotes());
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<FormatNote | null>(null);
+  const [viewing, setViewing] = useState<FormatNote | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const refresh = () => setNotes(getNotes());
@@ -41,6 +130,19 @@ const NotesSection = () => {
     deleteNote(id);
     refresh();
   };
+
+  if (viewing) {
+    return (
+      <NoteDetail
+        note={viewing}
+        onBack={() => setViewing(null)}
+        onEdit={() => {
+          setEditing(viewing);
+          setViewing(null);
+        }}
+      />
+    );
+  }
 
   if (showForm || editing) {
     return (
@@ -84,7 +186,8 @@ const NotesSection = () => {
           {filtered.map((note) => (
             <div
               key={note.id}
-              className="rounded-lg border border-border bg-card p-4 hover:border-primary/50 transition-colors"
+              className="rounded-lg border border-border bg-card p-4 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setViewing(note)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -96,7 +199,6 @@ const NotesSection = () => {
                       {note.content}
                     </p>
                   )}
-                  {/* Machine badges */}
                   {(note.machines || []).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {note.machines.map((m) => (
@@ -124,14 +226,34 @@ const NotesSection = () => {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(note)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewing(note);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditing(note);
+                    }}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(note.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(note.id);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -158,9 +280,7 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
   const [content, setContent] = useState(note?.content || "");
   const [keywords, setKeywords] = useState<string[]>(note?.keywords || []);
   const [kwInput, setKwInput] = useState("");
-  const [machines, setMachines] = useState<MachineNote[]>(
-    note?.machines || []
-  );
+  const [machines, setMachines] = useState<MachineNote[]>(note?.machines || []);
   const [expandedMachines, setExpandedMachines] = useState<Set<MachineName>>(
     new Set(note?.machines?.map((m) => m.machine) || [])
   );
@@ -174,7 +294,6 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
   const toggleMachine = (machine: MachineName) => {
     const exists = machines.find((m) => m.machine === machine);
     if (exists) {
-      // Toggle expand
       setExpandedMachines((prev) => {
         const next = new Set(prev);
         if (next.has(machine)) next.delete(machine);
@@ -182,7 +301,6 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
         return next;
       });
     } else {
-      // Add machine
       setMachines([...machines, { machine, content: "", keywords: [] }]);
       setExpandedMachines((prev) => new Set(prev).add(machine));
     }
@@ -374,7 +492,6 @@ const NoteForm = ({ note, onSave, onCancel }: NoteFormProps) => {
   );
 };
 
-// Small component for machine-specific keywords
 const MachineKeywordInput = ({
   keywords,
   onAdd,
