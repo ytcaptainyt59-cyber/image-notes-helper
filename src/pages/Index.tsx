@@ -113,6 +113,17 @@ const Index = ({ user, onLogout }: IndexProps) => {
               Formats
             </TabsTrigger>
             <TabsTrigger
+              value="defauts"
+              className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
+                data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
+                data-[state=active]:text-primary-foreground data-[state=active]:glow-primary
+                data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                transition-all duration-200"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Défauts
+            </TabsTrigger>
+            <TabsTrigger
               value="users"
               className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
                 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
