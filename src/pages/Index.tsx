@@ -142,6 +142,7 @@ const Index = ({ user, onLogout }: IndexProps) => {
               {[
                 { value: "fiches", icon: FileText, label: "Fiches" },
                 { value: "notes", icon: StickyNote, label: "Formats" },
+                { value: "defauts", icon: AlertTriangle, label: "Défauts" },
                 { value: "users", icon: Users, label: "Équipe" },
               ].map(({ value, icon: Icon, label }) => (
                 <button
