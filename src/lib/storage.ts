@@ -65,3 +65,24 @@ export function deleteNote(id: string) {
   localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   if (isNativePlatform()) deleteNativeNote(id);
 }
+
+// Défauts
+const DEFAUTS_KEY = "covinor_defauts";
+
+export function getDefauts(): MachineDefaut[] {
+  const data = localStorage.getItem(DEFAUTS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveDefaut(defaut: MachineDefaut) {
+  const defauts = getDefauts();
+  const idx = defauts.findIndex((d) => d.id === defaut.id);
+  if (idx >= 0) defauts[idx] = defaut;
+  else defauts.unshift(defaut);
+  localStorage.setItem(DEFAUTS_KEY, JSON.stringify(defauts));
+}
+
+export function deleteDefaut(id: string) {
+  const defauts = getDefauts().filter((d) => d.id !== id);
+  localStorage.setItem(DEFAUTS_KEY, JSON.stringify(defauts));
+}

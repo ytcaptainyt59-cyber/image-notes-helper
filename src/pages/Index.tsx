@@ -172,6 +172,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
             <NotesSection />
           </TabsContent>
 
+          <TabsContent value="defauts" className="animate-fade-in">
+            <DefautsSection />
+          </TabsContent>
+
           <TabsContent value="users" className="animate-fade-in">
             <UsersSection />
           </TabsContent>

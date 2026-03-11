@@ -93,6 +93,20 @@ export async function changePasswordRemote(id: string, password: string): Promis
   await callApi("/users", { action: "change_password", id, password });
 }
 
+// ---- Défauts ----
+
+export async function getDefautsRemote(): Promise<MachineDefaut[]> {
+  return (await callApi("/data", { action: "list", table: "defauts" })) || [];
+}
+
+export async function saveDefautRemote(defaut: MachineDefaut): Promise<void> {
+  await callApi("/data", { action: "save", table: "defauts", data: defaut });
+}
+
+export async function deleteDefautRemote(id: string): Promise<void> {
+  await callApi("/data", { action: "delete", table: "defauts", id });
+}
+
 // ---- AI Extract ----
 
 export async function extractFicheRemote(imageBase64: string) {
