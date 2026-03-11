@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, StickyNote, Sparkles, LogOut, User, Activity, Users } from "lucide-react";
+import { FileText, StickyNote, Sparkles, LogOut, User, Activity, Users, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
 import UsersSection from "@/components/UsersSection";
+import DefautsSection from "@/components/DefautsSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
@@ -112,6 +113,17 @@ const Index = ({ user, onLogout }: IndexProps) => {
               Formats
             </TabsTrigger>
             <TabsTrigger
+              value="defauts"
+              className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
+                data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
+                data-[state=active]:text-primary-foreground data-[state=active]:glow-primary
+                data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                transition-all duration-200"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Défauts
+            </TabsTrigger>
+            <TabsTrigger
               value="users"
               className="flex-1 gap-2 rounded-xl font-display text-xs uppercase tracking-wider py-3
                 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80
@@ -130,6 +142,7 @@ const Index = ({ user, onLogout }: IndexProps) => {
               {[
                 { value: "fiches", icon: FileText, label: "Fiches" },
                 { value: "notes", icon: StickyNote, label: "Formats" },
+                { value: "defauts", icon: AlertTriangle, label: "Défauts" },
                 { value: "users", icon: Users, label: "Équipe" },
               ].map(({ value, icon: Icon, label }) => (
                 <button
@@ -157,6 +170,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
 
           <TabsContent value="notes" className="animate-fade-in">
             <NotesSection />
+          </TabsContent>
+
+          <TabsContent value="defauts" className="animate-fade-in">
+            <DefautsSection />
           </TabsContent>
 
           <TabsContent value="users" className="animate-fade-in">

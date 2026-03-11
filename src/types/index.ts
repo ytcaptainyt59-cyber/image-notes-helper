@@ -55,3 +55,14 @@ export interface FormatNote {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface MachineDefaut {
+  id: string;
+  machine: MachineName;
+  title: string;
+  description: string;
+  solution: string;
+  severity: "low" | "medium" | "high";
+  createdAt: string;
+  updatedAt: string;
+}

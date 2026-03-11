@@ -225,6 +225,32 @@ app.post('/api/data', async (req, res) => {
           return res.json({ ok: true });
         }
       }
+    } else if (table === 'defauts') {
+      switch (action) {
+        case 'list': {
+          const [rows] = await pool.query('SELECT * FROM defauts ORDER BY updatedAt DESC');
+          return res.json(rows);
+        }
+        case 'save': {
+          const [existing] = await pool.query('SELECT id FROM defauts WHERE id = ?', [data.id]);
+          if (existing.length > 0) {
+            await pool.query(
+              'UPDATE defauts SET machine=?, title=?, description=?, solution=?, severity=?, updatedAt=? WHERE id=?',
+              [data.machine, data.title, data.description, data.solution, data.severity, data.updatedAt, data.id]
+            );
+          } else {
+            await pool.query(
+              'INSERT INTO defauts (id, machine, title, description, solution, severity, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)',
+              [data.id, data.machine, data.title, data.description, data.solution, data.severity, data.createdAt, data.updatedAt]
+            );
+          }
+          return res.json({ ok: true });
+        }
+        case 'delete': {
+          await pool.query('DELETE FROM defauts WHERE id = ?', [id]);
+          return res.json({ ok: true });
+        }
+      }
     }
 
     res.status(400).json({ error: 'Requête invalide' });

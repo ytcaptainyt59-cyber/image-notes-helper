@@ -1,4 +1,4 @@
-import { FicheConditionnement, FormatNote } from "@/types";
+import { FicheConditionnement, FormatNote, MachineDefaut } from "@/types";
 
 // Toujours utiliser l'API locale (Node.js Express sur le VPS)
 // Pas de dépendance à Lovable Cloud / Supabase
@@ -91,6 +91,20 @@ export async function deleteUserRemote(id: string): Promise<void> {
 
 export async function changePasswordRemote(id: string, password: string): Promise<void> {
   await callApi("/users", { action: "change_password", id, password });
+}
+
+// ---- Défauts ----
+
+export async function getDefautsRemote(): Promise<MachineDefaut[]> {
+  return (await callApi("/data", { action: "list", table: "defauts" })) || [];
+}
+
+export async function saveDefautRemote(defaut: MachineDefaut): Promise<void> {
+  await callApi("/data", { action: "save", table: "defauts", data: defaut });
+}
+
+export async function deleteDefautRemote(id: string): Promise<void> {
+  await callApi("/data", { action: "delete", table: "defauts", id });
 }
 
 // ---- AI Extract ----
