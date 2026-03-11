@@ -1,4 +1,4 @@
-import { FicheConditionnement, FormatNote } from "@/types";
+import { FicheConditionnement, FormatNote, MachineDefaut } from "@/types";
 
 // Toujours utiliser l'API locale (Node.js Express sur le VPS)
 // Pas de dépendance à Lovable Cloud / Supabase
