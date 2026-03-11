@@ -52,6 +52,18 @@ CREATE TABLE IF NOT EXISTS format_notes (
   updatedAt VARCHAR(30) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table des défauts machines
+CREATE TABLE IF NOT EXISTS defauts (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  machine VARCHAR(100) DEFAULT '',
+  title VARCHAR(255) DEFAULT '',
+  description TEXT DEFAULT NULL,
+  solution TEXT DEFAULT NULL,
+  severity VARCHAR(20) DEFAULT 'medium',
+  createdAt VARCHAR(30) DEFAULT '',
+  updatedAt VARCHAR(30) DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Table des utilisateurs (authentification)
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(36) NOT NULL PRIMARY KEY,
