@@ -1,4 +1,4 @@
-import { FicheConditionnement, FormatNote } from "@/types";
+import { FicheConditionnement, FormatNote, MachineDefaut } from "@/types";
 import {
   isNativePlatform,
   getNativeFiches,
