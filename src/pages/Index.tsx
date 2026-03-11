@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import FichesSection from "@/components/FichesSection";
 import NotesSection from "@/components/NotesSection";
 import UsersSection from "@/components/UsersSection";
+import DefautsSection from "@/components/DefautsSection";
 
 const AI_ENABLED_KEY = "covinor_ai_enabled";
 
