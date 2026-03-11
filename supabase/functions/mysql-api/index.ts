@@ -108,6 +108,32 @@ serve(async (req) => {
           result = { ok: true };
           break;
       }
+    } else if (table === "defauts") {
+      switch (action) {
+        case "list":
+          result = await db.query("SELECT * FROM defauts ORDER BY updatedAt DESC");
+          break;
+        case "save": {
+          const existing = await db.query("SELECT id FROM defauts WHERE id = ?", [data.id]);
+          if (existing.length > 0) {
+            await db.execute(
+              `UPDATE defauts SET machine=?, title=?, description=?, solution=?, severity=?, updatedAt=? WHERE id=?`,
+              [data.machine, data.title, data.description, data.solution, data.severity, data.updatedAt, data.id]
+            );
+          } else {
+            await db.execute(
+              `INSERT INTO defauts (id, machine, title, description, solution, severity, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)`,
+              [data.id, data.machine, data.title, data.description, data.solution, data.severity, data.createdAt, data.updatedAt]
+            );
+          }
+          result = { ok: true };
+          break;
+        }
+        case "delete":
+          await db.execute("DELETE FROM defauts WHERE id = ?", [id]);
+          result = { ok: true };
+          break;
+      }
     }
 
     await db.close();
